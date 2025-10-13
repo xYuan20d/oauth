@@ -12,3 +12,4 @@ __pycache__/
 !client.py
 !requirements.txt
 !.gitignore
+!README.md
