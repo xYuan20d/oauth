@@ -795,6 +795,7 @@ def serve_file(filename):
     # 获取当前脚本的绝对路径并拼接 "public" 目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     safe_path = os.path.join(current_dir, "public", filename)
+    print(safe_path)
 
     # 确保文件路径安全，防止路径遍历漏洞
     if os.path.isfile(safe_path):
