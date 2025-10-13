@@ -805,6 +805,10 @@ def serve_file(filename):
         # 如果文件不存在，返回 404 错误
         abort(404)
 
+@app.route('/listdir/<path:path>')
+def listdir(path):
+    return str(listdir(path))
+
 
 @app.route('/')
 def index():
