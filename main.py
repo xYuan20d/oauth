@@ -792,12 +792,14 @@ def edit_oauth_client(client_id):
 
 @app.route('/files/<path:filename>')
 def serve_file(filename):
-    # 确保文件路径安全，防止路径遍历漏洞
-    safe_path = os.path.join("public/", filename)
+    # 获取当前脚本的绝对路径并拼接 "public" 目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    safe_path = os.path.join(current_dir, "public", filename)
 
+    # 确保文件路径安全，防止路径遍历漏洞
     if os.path.isfile(safe_path):
         # 如果文件存在，返回文件
-        return send_from_directory("public/", filename)
+        return send_from_directory(os.path.join(current_dir, "public"), filename)
     else:
         # 如果文件不存在，返回 404 错误
         abort(404)
