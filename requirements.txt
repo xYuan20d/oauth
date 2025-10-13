@@ -6,3 +6,4 @@ Werkzeug
 gunicorn
 python-dotenv
 pymysql
+cryptography
