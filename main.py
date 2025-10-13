@@ -1,5 +1,10 @@
 import os
 import requests
+import smtplib
+from email.mime.text import MIMEText
+from email.header import Header
+import random
+import string
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -7,8 +12,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from datetime import datetime, timedelta
 import json
-# from dotenv import load_dotenv
-# load_dotenv()
+
+from dotenv import load_dotenv
+load_dotenv()
 
 # 初始化Flask应用
 app = Flask(__name__)
@@ -93,13 +99,24 @@ class DatabaseCompat:
         return Boolean
 
 
+# 邮箱验证码模型
+class EmailVerificationCode(db.Model):
+    id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
+    email = db.Column(DatabaseCompat.string_type(150), nullable=False, index=True)
+    code = db.Column(DatabaseCompat.string_type(6), nullable=False)
+    created_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow)
+    expires_at = db.Column(DatabaseCompat.datetime_type(), nullable=False)
+    used = db.Column(DatabaseCompat.boolean_type(), default=False)
+
+
 # 用户模型 - 使用足够长的VARCHAR类型
 class User(UserMixin, db.Model):
     id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
     username = db.Column(DatabaseCompat.string_type(150), unique=True, nullable=False)
     # 使用足够长的VARCHAR类型存储密码哈希
     password_hash = db.Column(DatabaseCompat.string_type(500), nullable=False)
-    email = db.Column(DatabaseCompat.string_type(150))
+    email = db.Column(DatabaseCompat.string_type(150), unique=True, nullable=False)
+    email_verified = db.Column(DatabaseCompat.boolean_type(), default=False)
 
     # OAuth相关
     oauth_clients = db.relationship('OAuthClient', backref='user', lazy=True)
@@ -163,6 +180,151 @@ with app.app_context():
     db.create_all()
 
 
+# 发送邮件函数
+def send_verification_email(email, verification_code):
+    """发送验证码邮件"""
+    try:
+        # 从环境变量读取SMTP配置
+        smtp_server = os.getenv('SMTP_SERVER', 'smtp.qq.com')
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        smtp_username = os.getenv('SMTP_USERNAME')
+        smtp_password = os.getenv('SMTP_PASSWORD')
+        from_addr = os.getenv('SMTP_FROM_ADDRESS', smtp_username)
+
+        if not smtp_username or not smtp_password:
+            raise Exception("SMTP配置不完整，请设置SMTP_USERNAME和SMTP_PASSWORD环境变量")
+
+        # 邮件内容
+        subject = 'OAuth认证平台 - 邮箱验证码'
+        content = f"""
+        <html>
+        <body>
+            <h2>OAuth认证平台 - 邮箱验证</h2>
+            <p>尊敬的 {email} 用户，您好！</p>
+            <p>您正在注册OAuth认证平台账户，验证码为：</p>
+            <h1 style="color: #2196F3; font-size: 32px; text-align: center; letter-spacing: 5px;">{verification_code}</h1>
+            <p>验证码将在10分钟内有效，请尽快完成验证。</p>
+            <p>如果这不是您本人的操作，请忽略此邮件。</p>
+            <hr>
+            <p style="color: #666; font-size: 12px;">此邮件由系统自动发送，请勿回复。</p>
+        </body>
+        </html>
+        """
+
+        # 创建邮件
+        msg = MIMEText(content, 'html', 'utf-8')
+        msg['From'] = Header(f'OAuth认证平台 <{from_addr}>', 'utf-8')
+        msg['To'] = Header(email, 'utf-8')
+        msg['Subject'] = Header(subject, 'utf-8')
+
+        # 发送邮件
+        if smtp_port == 465:
+            # SSL连接
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+        else:
+            # TLS连接
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+
+        server.login(smtp_username, smtp_password)
+        server.sendmail(from_addr, [email], msg.as_string())
+        server.quit()
+
+        return True
+    except Exception as e:
+        print(f"发送邮件失败: {str(e)}")
+        return False
+
+
+# 生成验证码
+def generate_verification_code():
+    """生成6位数字验证码"""
+    return ''.join(random.choices(string.digits, k=6))
+
+
+# 发送验证码路由
+@app.route('/send_verification_code', methods=['POST'])
+def send_verification_code():
+    """发送邮箱验证码"""
+    try:
+        data = request.get_json()
+        if not data or 'email' not in data:
+            return jsonify({'success': False, 'error': '邮箱地址不能为空'})
+
+        email = data['email'].strip().lower()
+
+        # 验证邮箱格式
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return jsonify({'success': False, 'error': '邮箱格式不正确'})
+
+        # 检查邮箱是否已被注册
+        existing_user = User.query.filter_by(email=email).first()
+        if existing_user:
+            return jsonify({'success': False, 'error': '该邮箱已被注册'})
+
+        # 检查是否在60秒内已经发送过验证码
+        recent_code = EmailVerificationCode.query.filter(
+            EmailVerificationCode.email == email,
+            EmailVerificationCode.created_at > datetime.utcnow() - timedelta(seconds=60),
+            EmailVerificationCode.used == False
+        ).first()
+
+        if recent_code:
+            return jsonify({'success': False, 'error': '验证码发送过于频繁，请60秒后再试'})
+
+        # 生成验证码
+        code = generate_verification_code()
+        expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+        # 保存验证码到数据库
+        verification_code = EmailVerificationCode(
+            email=email,
+            code=code,
+            expires_at=expires_at
+        )
+
+        db.session.add(verification_code)
+        db.session.commit()
+
+        # 发送邮件
+        if send_verification_email(email, code):
+            return jsonify({'success': True})
+        else:
+            # 如果发送失败，删除验证码记录
+            db.session.delete(verification_code)
+            db.session.commit()
+            return jsonify({'success': False, 'error': '邮件发送失败，请检查邮箱地址或稍后重试'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'系统错误: {str(e)}'})
+
+
+# 验证验证码
+def verify_email_code(email, code):
+    """验证邮箱验证码"""
+    try:
+        # 查找有效的验证码
+        verification = EmailVerificationCode.query.filter(
+            EmailVerificationCode.email == email,
+            EmailVerificationCode.code == code,
+            EmailVerificationCode.expires_at > datetime.utcnow(),
+            EmailVerificationCode.used == False
+        ).first()
+
+        if verification:
+            # 标记为已使用
+            verification.used = True
+            db.session.commit()
+            return True
+        return False
+    except Exception as e:
+        print(f"验证验证码时出错: {str(e)}")
+        return False
+
+
 # 加载用户
 @login_manager.user_loader
 def load_user(user_id):
@@ -173,10 +335,16 @@ def load_user(user_id):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].strip()
         password = request.form['password']
         confirm_password = request.form['confirm_password']
-        email = request.form.get('email', '')
+        email = request.form['email'].strip().lower()
+        verification_code = request.form['verification_code'].strip()
+
+        # 验证必填字段
+        if not all([username, password, confirm_password, email, verification_code]):
+            flash('所有字段都是必填的!', 'error')
+            return redirect(url_for('register'))
 
         # 检查用户名是否已存在
         existing_user = User.query.filter_by(username=username).first()
@@ -184,20 +352,36 @@ def register():
             flash('用户名已存在!', 'error')
             return redirect(url_for('register'))
 
+        # 检查邮箱是否已存在
+        existing_email = User.query.filter_by(email=email).first()
+        if existing_email:
+            flash('该邮箱已被注册!', 'error')
+            return redirect(url_for('register'))
+
         # 检查密码和确认密码是否一致
         if password != confirm_password:
             flash('密码和确认密码不一致，请重新输入!', 'error')
+            return redirect(url_for('register'))
+
+        # 验证邮箱验证码
+        if not verify_email_code(email, verification_code):
+            flash('验证码错误或已过期!', 'error')
             return redirect(url_for('register'))
 
         # 密码哈希
         password_hash = generate_password_hash(password)
 
         # 创建用户对象并存入数据库
-        new_user = User(username=username, password_hash=password_hash, email=email)
+        new_user = User(
+            username=username,
+            password_hash=password_hash,
+            email=email,
+            email_verified=True  # 验证通过后标记为已验证
+        )
         db.session.add(new_user)
         db.session.commit()
 
-        flash('注册成功！', 'success')
+        flash('注册成功！邮箱已验证。', 'success')
         return redirect(url_for('login'))
 
     return render_template('register.html')
@@ -804,6 +988,7 @@ def serve_file(filename):
     else:
         # 如果文件不存在，返回 404 错误
         abort(404)
+
 
 @app.route('/')
 def index():
