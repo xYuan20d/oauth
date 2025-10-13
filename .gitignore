@@ -13,3 +13,4 @@ __pycache__/
 !requirements.txt
 !.gitignore
 !README.md
+!vercel.json
