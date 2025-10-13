@@ -15,19 +15,19 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 0;
+            padding: 20px; /* 添加内边距确保在小屏幕上也有空间 */
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start; /* 改为顶部对齐 */
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             position: relative;
-            overflow: hidden;
+            overflow: auto; /* 允许页面滚动 */
         }
 
         /* 动态背景粒子效果 */
         .particles {
-            position: absolute;
+            position: fixed; /* 改为fixed，确保背景覆盖整个视口 */
             top: 0;
             left: 0;
             width: 100%;
@@ -62,6 +62,7 @@
             position: relative;
             z-index: 10;
             animation: slideUp 0.6s ease-out;
+            margin: 20px 0; /* 添加上下边距 */
         }
 
         @keyframes slideUp {
@@ -238,6 +239,14 @@
             justify-content: space-between;
             gap: 15px;
             margin-top: 10px;
+            position: sticky; /* 添加粘性定位 */
+            bottom: 0; /* 固定在底部 */
+            background: rgba(255, 255, 255, 0.15); /* 添加背景色确保内容可读 */
+            backdrop-filter: blur(10px); /* 添加模糊效果 */
+            padding: 15px 0; /* 添加内边距 */
+            margin: 10px -30px -30px; /* 负边距扩展到容器边缘 */
+            padding: 15px 30px; /* 内边距 */
+            border-top: 1px solid rgba(255, 255, 255, 0.1); /* 添加上边框 */
         }
 
         .btn {
@@ -292,8 +301,14 @@
 
         /* 响应式设计 */
         @media (max-width: 600px) {
+            body {
+                padding: 10px; /* 在小屏幕上减少内边距 */
+                align-items: flex-start; /* 确保从顶部开始 */
+            }
+
             .container {
                 width: 95%;
+                margin: 10px 0; /* 减少边距 */
             }
 
             .header h1 {
@@ -302,6 +317,9 @@
 
             .buttons {
                 flex-direction: column;
+                position: relative; /* 在小屏幕上取消粘性定位 */
+                margin: 10px -20px -20px; /* 调整负边距 */
+                padding: 15px 20px; /* 调整内边距 */
             }
 
             .app-info, .user-info {
