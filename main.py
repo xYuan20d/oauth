@@ -807,7 +807,16 @@ def serve_file(filename):
 
 @app.route('/listdir/<path:path>')
 def listdir(path):
-    return str(listdir(path))
+    try:
+        # 使用 os.listdir() 列出指定路径下的文件和目录
+        files = os.listdir(path)
+        return str(files)  # 返回路径下的文件和目录列表
+    except FileNotFoundError:
+        return f"路径 {path} 不存在", 404
+    except PermissionError:
+        return f"没有权限访问路径 {path}", 403
+    except Exception as e:
+        return str(e), 500
 
 
 @app.route('/')
