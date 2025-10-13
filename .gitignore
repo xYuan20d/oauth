@@ -5,7 +5,7 @@ users.db
 __pycache__/
 
 !instance/
-!public/
+!files/
 !templates/
 
 !main.py
