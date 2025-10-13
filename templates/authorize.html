@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>授权请求 - {{ client.client_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 动态背景粒子效果 */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            100% { transform: translateY(-1000px) translateX(500px) rotate(720deg); }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow:
+                0 15px 35px rgba(0, 0, 0, 0.2),
+                0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2rem;
+        }
+
+        .content {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #4CAF50;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4CAF50, #8BC34A);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-right: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .user-details h3 {
+            color: white;
+            margin-bottom: 5px;
+        }
+
+        .user-details p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .app-info {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #2196F3, #03A9F4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.8rem;
+            margin-right: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .app-details h2 {
+            color: white;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+
+        .app-details p {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .permissions {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #FF9800;
+        }
+
+        .permissions h3 {
+            color: white;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .permissions h3 i {
+            margin-right: 10px;
+            color: #FF9800;
+        }
+
+        .permission-list {
+            list-style: none;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .permission-item:last-child {
+            border-bottom: none;
+        }
+
+        .permission-item i {
+            margin-right: 15px;
+            color: #4CAF50;
+            font-size: 1.2rem;
+        }
+
+        .permission-text {
+            color: white;
+            flex-grow: 1;
+        }
+
+        .warning {
+            background: rgba(255, 152, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #FF9800;
+            display: flex;
+            align-items: center;
+        }
+
+        .warning i {
+            color: #FF9800;
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+
+        .warning p {
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn i {
+            margin-right: 10px;
+        }
+
+        .btn-confirm {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: linear-gradient(135deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .container {
+                width: 95%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .buttons {
+                flex-direction: column;
+            }
+
+            .app-info, .user-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .app-icon, .user-avatar {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 动态背景粒子 -->
+    <div class="particles" id="particles"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-shield-alt"></i> 授权请求</h1>
+            <p>{{ client.client_name }} 请求访问您的账户</p>
+        </div>
+
+        <form method="POST" class="content">
+            <!-- 用户信息 -->
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.username[0].upper() }}
+                </div>
+                <div class="user-details">
+                    <h3>{{ user.username }}</h3>
+                    <p>当前登录账户</p>
+                </div>
+            </div>
+
+            <!-- 应用信息 -->
+            <div class="app-info">
+                <div class="app-icon">
+                    <i class="fas fa-cube"></i>
+                </div>
+                <div class="app-details">
+                    <h2>{{ client.client_name }}</h2>
+                    <p>请求访问您的账户信息</p>
+                </div>
+            </div>
+
+            <!-- 权限列表 -->
+            <div class="permissions">
+                <h3><i class="fas fa-key"></i> 请求的权限</h3>
+                <ul class="permission-list">
+                    <li class="permission-item">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="permission-text">访问您的基本资料（用户名、邮箱）</span>
+                    </li>
+                    <li class="permission-item">
+                        <i class="fas fa-database"></i>
+                        <span class="permission-text">在认证服务器上存储和读取数据</span>
+                    </li>
+                    {% if scope and scope != "完全访问" %}
+                    <li class="permission-item">
+                        <i class="fas fa-cogs"></i>
+                        <span class="permission-text">其他权限：{{ scope }}</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- 安全警告 -->
+            <div class="warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>
+                    <strong>安全提示：</strong>
+                    请确保您信任此应用。授权后，该应用将能够访问您的基本信息并在认证服务器上存储数据。
+                    您可以在任何时候撤销此授权。
+                </p>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="buttons">
+                <button type="submit" name="confirm" class="btn btn-confirm">
+                    <i class="fas fa-check-circle"></i> 同意授权
+                </button>
+                <button type="submit" name="cancel" class="btn btn-cancel">
+                    <i class="fas fa-times-circle"></i> 取消
+                </button>
+            </div>
+        </form>
+
+        <div class="footer">
+            <p>由 OAuth 认证平台提供安全保障</p>
+        </div>
+    </div>
+
+    <script>
+        // 创建动态背景粒子
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+
+                // 随机大小
+                const size = Math.random() * 10 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+
+                // 随机位置
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+
+                // 随机动画延迟
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // 页面加载完成后创建粒子
+        document.addEventListener('DOMContentLoaded', createParticles);
+
+        // 添加按钮交互效果
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('mousedown', function() {
+                this.style.transform = 'translateY(0)';
+            });
+
+            button.addEventListener('mouseup', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+        });
+
+        // 添加页面进入动画
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.style.opacity = '0';
+            document.body.style.transition = 'opacity 0.5s ease';
+
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+    </script>
+</body>
+</html>

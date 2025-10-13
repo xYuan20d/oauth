@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>账户设置 - {{ user.username }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('/files/images/background.gif') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .left-sidebar {
+            width: 250px;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin-right: 20px;
+            box-shadow: 4px 4px 15px rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: black;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin: 8px 0;
+            background-color: transparent;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .left-sidebar a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .left-sidebar a:hover {
+            background-color: rgba(240, 240, 240, 0.7);
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-section {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 15px;
+        }
+
+        .section-header i {
+            font-size: 1.8rem;
+            margin-right: 15px;
+            color: #FFD700;
+        }
+
+        .section-header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #fff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #ddd;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 5px rgba(66, 133, 244, 0.5);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .form-hint {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #4285f4;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: #3367d6;
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            background-color: #ea4335;
+        }
+
+        .btn-danger:hover {
+            background-color: #d33426;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar-edit {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px;
+            text-align: center;
+            font-size: 0.8rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .user-avatar:hover .avatar-edit {
+            opacity: 1;
+        }
+
+        .danger-zone {
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            background-color: rgba(255, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .danger-zone h3 {
+            color: #ff6b6b;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .danger-zone h3 i {
+            margin-right: 10px;
+        }
+
+        .danger-zone p {
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 15px;
+        }
+
+        .password-strength {
+            height: 5px;
+            border-radius: 3px;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .password-weak {
+            background-color: #ea4335;
+            width: 25%;
+        }
+
+        .password-medium {
+            background-color: #fbbc05;
+            width: 50%;
+        }
+
+        .password-strong {
+            background-color: #34a853;
+            width: 100%;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: rgba(52, 168, 83, 0.2);
+            border: 1px solid rgba(52, 168, 83, 0.5);
+            color: #34a853;
+        }
+
+        .alert-error {
+            background-color: rgba(234, 67, 53, 0.2);
+            border: 1px solid rgba(234, 67, 53, 0.5);
+            color: #ea4335;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-sidebar {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="user-avatar">
+                    {{ user.username[0].upper() }}
+                    <div class="avatar-edit">
+                        <i class="fas fa-camera"></i> 更换头像
+                    </div>
+                </div>
+                <h3 style="color: black; margin: 10px 0;">{{ user.username }}</h3>
+                <p style="color: #666; font-size: 0.9rem; margin: 0;">{{ user.email if user.email else '未设置邮箱' }}</p>
+            </div>
+
+            <a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> 控制中心</a>
+            <a href="{{ url_for('oauth_clients') }}"><i class="fas fa-code"></i> 我的应用</a>
+            <a href="{{ url_for('create_oauth_client') }}"><i class="fas fa-plus-circle"></i> 创建应用</a>
+            <a href="#" style="background-color: rgba(66, 133, 244, 0.2);"><i class="fas fa-cog"></i> 账户设置</a>
+
+            <div style="margin-top: auto;">
+                <a href="{{ url_for('logout') }}" style="background-color: rgba(255, 69, 0, 0.8); color: white;">
+                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- 个人信息设置 -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-user"></i>
+                    <h2>个人信息</h2>
+                </div>
+
+                <div id="profile-alert" class="alert"></div>
+
+                <form id="profile-form">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="username"><i class="fas fa-user-tag"></i> 用户名</label>
+                                <input type="text" id="username" name="username" value="{{ user.username }}" readonly>
+                                <div class="form-hint">用户名创建后不可更改</div>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label for="email"><i class="fas fa-envelope"></i> 邮箱地址</label>
+                                <input type="email" id="email" name="email" value="{{ user.email if user.email else '' }}" placeholder="请输入邮箱地址">
+                                <div class="form-hint">用于接收重要通知和重置密码</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn"><i class="fas fa-save"></i> 保存更改</button>
+                        <button type="reset" class="btn btn-secondary"><i class="fas fa-undo"></i> 重置</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 密码修改 -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-lock"></i>
+                    <h2>修改密码</h2>
+                </div>
+
+                <div id="password-alert" class="alert"></div>
+
+                <form id="password-form">
+                    <div class="form-group">
+                        <label for="current-password"><i class="fas fa-key"></i> 当前密码</label>
+                        <input type="password" id="current-password" name="current_password" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new-password"><i class="fas fa-lock"></i> 新密码</label>
+                        <input type="password" id="new-password" name="new_password" required>
+                        <div class="form-hint">密码至少8位，包含字母和数字</div>
+                        <div class="password-strength" id="password-strength"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm-password"><i class="fas fa-lock"></i> 确认新密码</label>
+                        <input type="password" id="confirm-password" name="confirm_password" required>
+                        <div class="form-hint" id="password-match-hint"></div>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn"><i class="fas fa-key"></i> 修改密码</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 安全设置 -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-shield-alt"></i>
+                    <h2>安全设置</h2>
+                </div>
+
+                <div class="form-group">
+                    <label for="two-factor"><i class="fas fa-mobile-alt"></i> 双因素认证</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>启用双因素认证增强账户安全</span>
+                        <label class="switch">
+                            <input type="checkbox" id="two-factor">
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="form-hint">启用后，登录时需要输入手机验证码</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="session-timeout"><i class="fas fa-clock"></i> 会话超时</label>
+                    <select id="session-timeout" style="width: 100%; padding: 12px 15px; border-radius: 5px; border: 1px solid rgba(255, 255, 255, 0.3); background-color: rgba(255, 255, 255, 0.1); color: white;">
+                        <option value="30">30分钟</option>
+                        <option value="60" selected>1小时</option>
+                        <option value="120">2小时</option>
+                        <option value="240">4小时</option>
+                        <option value="480">8小时</option>
+                    </select>
+                    <div class="form-hint">设置登录会话的自动超时时间</div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn"><i class="fas fa-save"></i> 保存安全设置</button>
+                </div>
+            </div>
+
+            <!-- 危险区域 -->
+            <div class="settings-section danger-zone">
+                <div class="section-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h2>危险区域</h2>
+                </div>
+
+                <div class="form-group">
+                    <h3><i class="fas fa-trash-alt"></i> 删除账户</h3>
+                    <p>永久删除您的账户和所有相关数据。此操作不可撤销，请谨慎操作。</p>
+                    <button type="button" class="btn btn-danger" id="delete-account-btn"><i class="fas fa-trash"></i> 删除我的账户</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 显示提示信息
+        function showAlert(elementId, message, type) {
+            const alertElement = document.getElementById(elementId);
+            alertElement.textContent = message;
+            alertElement.className = `alert alert-${type}`;
+            alertElement.style.display = 'block';
+
+            // 5秒后自动隐藏
+            setTimeout(() => {
+                alertElement.style.display = 'none';
+            }, 5000);
+        }
+
+        // 密码强度检测
+        document.getElementById('new-password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('password-strength');
+
+            if (password.length === 0) {
+                strengthBar.className = 'password-strength';
+                return;
+            }
+
+            // 简单的密码强度检测
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^a-zA-Z\d]/.test(password)) strength++;
+
+            if (strength < 2) {
+                strengthBar.className = 'password-strength password-weak';
+            } else if (strength < 4) {
+                strengthBar.className = 'password-strength password-medium';
+            } else {
+                strengthBar.className = 'password-strength password-strong';
+            }
+        });
+
+        // 密码匹配检测
+        document.getElementById('confirm-password').addEventListener('input', function() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = this.value;
+            const hintElement = document.getElementById('password-match-hint');
+
+            if (confirmPassword.length === 0) {
+                hintElement.textContent = '';
+                return;
+            }
+
+            if (newPassword === confirmPassword) {
+                hintElement.textContent = '密码匹配';
+                hintElement.style.color = '#34a853';
+            } else {
+                hintElement.textContent = '密码不匹配';
+                hintElement.style.color = '#ea4335';
+            }
+        });
+
+        // 个人信息表单提交
+        document.getElementById('profile-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 模拟保存个人信息
+            setTimeout(() => {
+                showAlert('profile-alert', '个人信息已成功更新！', 'success');
+            }, 1000);
+        });
+
+        // 密码修改表单提交
+        document.getElementById('password-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            // 简单验证
+            if (newPassword !== confirmPassword) {
+                showAlert('password-alert', '新密码与确认密码不匹配！', 'error');
+                return;
+            }
+
+            if (newPassword.length < 8) {
+                showAlert('password-alert', '密码长度至少8位！', 'error');
+                return;
+            }
+
+            // 模拟密码修改
+            setTimeout(() => {
+                showAlert('password-alert', '密码已成功修改！', 'success');
+                document.getElementById('password-form').reset();
+                document.getElementById('password-strength').className = 'password-strength';
+                document.getElementById('password-match-hint').textContent = '';
+            }, 1000);
+        });
+
+        // 删除账户确认
+        document.getElementById('delete-account-btn').addEventListener('click', function() {
+            if (confirm('您确定要永久删除您的账户吗？此操作不可撤销，所有数据将永久丢失！')) {
+                if (confirm('再次确认：您真的要删除账户吗？')) {
+                    // 这里应该调用删除账户的API
+                    alert('账户删除功能需要后端支持，此操作已取消。');
+                }
+            }
+        });
+
+        // 简单的切换开关样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 60px;
+                height: 34px;
+            }
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 34px;
+            }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 26px;
+                width: 26px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+
+            input:checked + .slider {
+                background-color: #4285f4;
+            }
+
+            input:checked + .slider:before {
+                transform: translateX(26px);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

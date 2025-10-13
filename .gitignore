@@ -1,0 +1,14 @@
+/*
+
+.DS_Store
+users.db
+__pycache__/
+
+!instance/
+!public/
+!templates/
+
+!main.py
+!client.py
+!requirements.txt
+!.gitignore

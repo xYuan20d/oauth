@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>授权管理 - {{ user.username }}</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: url('/files/images/background.gif') no-repeat center center fixed;
+            background-size: cover;
+            color: #fff;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            padding: 20px;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .left-sidebar {
+            width: 250px;
+            background-color: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin-right: 20px;
+            box-shadow: 4px 4px 15px rgba(255, 255, 255, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .left-sidebar a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: black;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin: 8px 0;
+            background-color: transparent;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .left-sidebar a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .left-sidebar a:hover {
+            background-color: rgba(240, 240, 240, 0.7);
+            transform: translateX(5px);
+        }
+
+        .left-sidebar a.active {
+            background-color: rgba(66, 133, 244, 0.8);
+            color: white;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-section {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+            color: #FFD700;
+        }
+
+        .header-section p {
+            font-size: 1.2rem;
+            color: #ddd;
+            margin: 10px 0;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .app-card {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
+        }
+
+        .app-card.active {
+            border-left: 4px solid #34a853;
+        }
+
+        .app-card.inactive {
+            border-left: 4px solid #ea4335;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .app-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .app-info {
+            flex-grow: 1;
+        }
+
+        .app-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #fff;
+            margin: 0 0 5px 0;
+        }
+
+        .app-client-id {
+            font-size: 0.9rem;
+            color: #ccc;
+            font-family: monospace;
+        }
+
+        .app-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background-color: rgba(52, 168, 83, 0.3);
+            color: #34a853;
+        }
+
+        .status-inactive {
+            background-color: rgba(234, 67, 53, 0.3);
+            color: #ea4335;
+        }
+
+        .app-details {
+            color: #ddd;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            color: #ccc;
+        }
+
+        .detail-value {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4285f4;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 10px;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover {
+            background-color: #3367d6;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            background-color: #ea4335;
+        }
+
+        .btn-danger:hover {
+            background-color: #d33426;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #138496;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #ccc;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #ccc;
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #4285f4;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0 auto 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-sidebar {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-section h1 {
+                font-size: 2rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .btn {
+                margin-right: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div class="user-avatar">
+                    {{ user.username[0].upper() }}
+                </div>
+                <h3 style="color: black; margin: 10px 0;">{{ user.username }}</h3>
+                <p style="color: #666; font-size: 0.9rem; margin: 0;">{{ user.email if user.email else '未设置邮箱' }}</p>
+            </div>
+
+            <a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> 控制中心</a>
+            <a href="{{ url_for('oauth_clients') }}"><i class="fas fa-code"></i> 我的应用</a>
+            <a href="{{ url_for('create_oauth_client') }}"><i class="fas fa-plus-circle"></i> 创建应用</a>
+            <a href="{{ url_for('authorized_apps') }}" class="active"><i class="fas fa-shield-alt"></i> 授权管理</a>
+            <a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> 账户设置</a>
+
+            <div style="margin-top: auto;">
+                <a href="{{ url_for('logout') }}" style="background-color: rgba(255, 69, 0, 0.8); color: white;">
+                    <i class="fas fa-sign-out-alt"></i> 退出登录
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header Section -->
+            <div class="header-section">
+                <h1><i class="fas fa-shield-alt"></i> 授权管理</h1>
+                <p>查看和管理您已授权的第三方应用，控制它们对您数据的访问权限</p>
+                <div class="stats" style="display: flex; justify-content: center; gap: 30px; margin-top: 20px;">
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-apps-count">0</span>
+                        <span class="stat-label">已授权应用</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="active-apps-count">0</span>
+                        <span class="stat-label">活跃应用</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Apps Grid -->
+            <div id="apps-container">
+                <!-- 加载状态 -->
+                <div class="loading" id="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>正在加载您的授权应用...</p>
+                </div>
+
+                <!-- 空状态 -->
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <i class="fas fa-user-shield"></i>
+                    <h3>暂无授权应用</h3>
+                    <p>您还没有授权任何第三方应用访问您的账户</p>
+                    <p>当您使用第三方应用登录时，它们会出现在这里</p>
+                </div>
+
+                <!-- 应用列表 -->
+                <div class="apps-grid" id="apps-grid" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 加载授权应用列表
+        async function loadAuthorizedApps() {
+            try {
+                console.log('开始加载授权应用...');
+
+                const response = await fetch('/api/authorized_apps');
+                console.log('响应状态:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('授权应用数据:', data);
+
+                    displayApps(data.authorized_apps);
+                    updateStats(data.authorized_apps);
+                } else {
+                    throw new Error('获取授权应用失败: ' + response.status);
+                }
+            } catch (error) {
+                console.error('加载授权应用失败:', error);
+                showError('加载授权应用失败，请刷新页面重试');
+            }
+        }
+
+        // 显示应用列表
+        function displayApps(apps) {
+            const loadingState = document.getElementById('loading-state');
+            const emptyState = document.getElementById('empty-state');
+            const appsGrid = document.getElementById('apps-grid');
+
+            loadingState.style.display = 'none';
+
+            if (!apps || apps.length === 0) {
+                emptyState.style.display = 'block';
+                appsGrid.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            appsGrid.style.display = 'grid';
+            appsGrid.innerHTML = '';
+
+            apps.forEach((app, index) => {
+                const appCard = createAppCard(app, index);
+                appsGrid.appendChild(appCard);
+            });
+
+            // 添加动画效果
+            animateCards();
+        }
+
+        // 创建应用卡片
+        function createAppCard(app, index) {
+            const card = document.createElement('div');
+            card.className = `app-card ${app.is_active ? 'active' : 'inactive'}`;
+            card.style.animationDelay = `${index * 100}ms`;
+
+            // 应用图标（使用应用名称首字母）
+            const appIcon = app.client_name ? app.client_name[0].toUpperCase() : 'A';
+
+            // 格式化日期
+            const authDate = app.authorized_at ? new Date(app.authorized_at).toLocaleDateString('zh-CN') : '未知';
+
+            card.innerHTML = `
+                <div class="app-header">
+                    <div style="display: flex; align-items: center;">
+                        <div class="app-icon">${appIcon}</div>
+                        <div class="app-info">
+                            <div class="app-name">${app.client_name || '未知应用'}</div>
+                            <div class="app-client-id">${app.client_id}</div>
+                        </div>
+                    </div>
+                    <span class="app-status ${app.is_active ? 'status-active' : 'status-inactive'}">
+                        ${app.is_active ? '活跃' : '已过期'}
+                    </span>
+                </div>
+
+                <div class="app-details">
+                    <div class="detail-item">
+                        <span class="detail-label">授权时间:</span>
+                        <span class="detail-value">${authDate}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">权限范围:</span>
+                        <span class="detail-value">${app.scope || '基础权限'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">客户端ID:</span>
+                        <span class="detail-value" style="font-family: monospace; font-size: 0.8rem;">${app.client_id}</span>
+                    </div>
+                </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary btn-small" onclick="viewAppDetails('${app.client_id}')">
+                            <i class="fas fa-info-circle"></i> 详情
+                        </button>
+                        <button class="btn btn-info btn-small" onclick="manageAppData('${app.client_id}', '${app.client_name || '该应用'}')">
+                            <i class="fas fa-database"></i> 查看数据
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="revokeAuthorization('${app.client_id}', '${app.client_name || '该应用'}')">
+                            <i class="fas fa-trash-alt"></i> 取消授权
+                        </button>
+                    </div>
+            `;
+
+            return card;
+        }
+
+        // 更新统计信息
+        function updateStats(apps) {
+            const totalApps = apps.length;
+            const activeApps = apps.filter(app => app.is_active).length;
+
+            document.getElementById('total-apps-count').textContent = totalApps;
+            document.getElementById('active-apps-count').textContent = activeApps;
+        }
+
+        // 查看应用详情
+        function viewAppDetails(clientId) {
+            // 这里可以跳转到详情页面或显示模态框
+            alert(`查看应用 ${clientId} 的详细信息\n\n此功能正在开发中...`);
+        }
+
+        // 取消授权
+        async function revokeAuthorization(clientId, appName) {
+            if (!confirm(`确定要取消对 "${appName}" 的授权吗？\n\n这将撤销该应用的所有访问权限，您可能需要重新登录。`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/authorized_apps/${clientId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showSuccess(result.message);
+                    // 重新加载应用列表
+                    loadAuthorizedApps();
+                } else {
+                    throw new Error('取消授权失败');
+                }
+            } catch (error) {
+                console.error('取消授权失败:', error);
+                showError('取消授权失败，请重试');
+            }
+        }
+
+        // 显示成功消息
+        function showSuccess(message) {
+            // 创建临时提示
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(52, 168, 83, 0.9);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // 显示错误消息
+        function showError(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: rgba(234, 67, 53, 0.9);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // 卡片动画
+        function animateCards() {
+            const cards = document.querySelectorAll('.app-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        }
+
+        // 添加CSS动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('授权管理页面初始化...');
+            loadAuthorizedApps();
+        });
+        // 管理应用数据
+        async function manageAppData(clientId, appName) {
+            try {
+                // 获取应用数据
+                const response = await fetch(`/api/authorized_apps/${clientId}/details`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showDataManagementModal(clientId, appName, data);
+                } else {
+                    throw new Error('获取应用数据失败');
+                }
+            } catch (error) {
+                console.error('获取应用数据失败:', error);
+                showError('获取应用数据失败');
+            }
+        }
+
+        // 显示数据管理模态框
+        function showDataManagementModal(clientId, appName, data) {
+            // 创建模态框
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            `;
+
+            const storedDataCount = data.stored_data ? data.stored_data.count : 0;
+
+            modal.innerHTML = `
+                <div style="background: rgba(255, 255, 255, 0.95); color: #333; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="margin-top: 0; color: #4285f4;">
+                        <i class="fas fa-database"></i> 数据管理 - ${appName}
+                    </h2>
+
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+                        <h4 style="margin: 0 0 10px 0; color: #666;">
+                            <i class="fas fa-info-circle"></i> 数据说明
+                        </h4>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                            此数据为应用全局数据，所有用户共享。为了保护其他用户的权益，您只能查看数据信息，无法修改或删除。
+                        </p>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <h3><i class="fas fa-info-circle"></i> 应用信息</h3>
+                        <p><strong>客户端ID:</strong> <code style="background: #f5f5f5; padding: 2px 5px; border-radius: 3px;">${clientId}</code></p>
+                        <p><strong>存储的数据项:</strong> ${storedDataCount} 个</p>
+                        <p><strong>当前状态:</strong> ${data.current_authorization.has_active_token ? '<span style="color: #34a853;">已授权</span>' : '<span style="color: #ea4335;">未授权</span>'}</p>
+                    </div>
+
+                    ${storedDataCount > 0 ? `
+                    <div style="margin-bottom: 20px;">
+                        <h3><i class="fas fa-table"></i> 存储的数据结构</h3>
+                        <div style="max-height: 300px; overflow-y: auto; background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.9rem;">
+                            ${data.stored_data.items.map(item => `
+                                <div style="margin-bottom: 10px; padding: 10px; background: white; border-radius: 3px; border-left: 3px solid #4285f4;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <strong>键: ${item.key}</strong>
+                                        <span style="color: #666; font-size: 0.8rem;">类型: ${item.type}</span>
+                                    </div>
+                                    <div style="color: #666; font-size: 0.8rem;">
+                                        最后更新: ${new Date(item.updated_at).toLocaleString('zh-CN')}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 40px 20px; color: #666;">
+                        <i class="fas fa-database" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.5;"></i>
+                        <p style="margin: 0;">该应用尚未存储任何全局数据</p>
+                    </div>
+                    `}
+
+                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="closeModal(this)">关闭</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            // 添加CSS样式
+            if (!document.querySelector('#modal-styles')) {
+                const style = document.createElement('style');
+                style.id = 'modal-styles';
+                style.textContent = `
+                    .btn {
+                        display: inline-block;
+                        padding: 10px 20px;
+                        background-color: #4285f4;
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        border: none;
+                        cursor: pointer;
+                        font-size: 0.9rem;
+                        transition: all 0.3s ease;
+                    }
+                    .btn:hover {
+                        background-color: #3367d6;
+                        transform: translateY(-2px);
+                    }
+                    .btn-secondary {
+                        background-color: rgba(0, 0, 0, 0.1);
+                        color: #333;
+                    }
+                    .btn-secondary:hover {
+                        background-color: rgba(0, 0, 0, 0.2);
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        // 关闭模态框
+        function closeModal(button) {
+            const modal = button.closest('div[style*="position: fixed"]');
+            if (modal) {
+                document.body.removeChild(modal);
+            }
+        }
+    </script>
+</body>
+</html>
