@@ -805,8 +805,13 @@ def serve_file(filename):
         # 如果文件不存在，返回 404 错误
         abort(404)
 
-@app.route('/listdir/<path:path>')
-def listdir(path):
+
+@app.route('/listdir')
+def listdir():
+    path = request.args.get('path')  # 获取查询参数中的 path
+    if not path:
+        return "路径参数缺失", 400  # 如果没有传递 path 参数，返回 400 错误
+
     try:
         # 使用 os.listdir() 列出指定路径下的文件和目录
         files = os.listdir(path)
