@@ -805,25 +805,6 @@ def serve_file(filename):
         # 如果文件不存在，返回 404 错误
         abort(404)
 
-
-@app.route('/listdir')
-def listdir():
-    path = request.args.get('path')  # 获取查询参数中的 path
-    if not path:
-        return "路径参数缺失", 400  # 如果没有传递 path 参数，返回 400 错误
-
-    try:
-        # 使用 os.listdir() 列出指定路径下的文件和目录
-        files = os.listdir(path)
-        return str(files)  # 返回路径下的文件和目录列表
-    except FileNotFoundError:
-        return f"路径 {path} 不存在", 404
-    except PermissionError:
-        return f"没有权限访问路径 {path}", 403
-    except Exception as e:
-        return str(e), 500
-
-
 @app.route('/')
 def index():
     return render_template("index.html")
