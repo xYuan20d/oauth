@@ -213,7 +213,7 @@
         width: 100%;
         height: 100%;
         overflow: auto;
-        background-color: rgba(0,0,0,0.7);
+        background-color: rgba(0, 0, 0, 0.7);
         backdrop-filter: blur(5px);
     }
 
@@ -392,16 +392,17 @@
         </div>
         <form id="editClientForm">
             <div class="form-group">
-                <label for="client_name" class="form-label"><i class="fas fa-tag"></i> 应用名称</label>
-                <input type="text" id="client_name" name="client_name" class="form-input" required>
+                <label for="client_name" class="form-label" style="color: black"><i class="fas fa-tag"></i> 应用名称</label>
+                <input type="text" id="client_name" name="client_name" class="form-input" style="border: 1px solid black; color: black;" required>
             </div>
             <div class="form-group">
-                <label for="redirect_uris" class="form-label"><i class="fas fa-link"></i> 回调URL</label>
-                <textarea id="redirect_uris" name="redirect_uris" class="form-textarea" rows="5" required></textarea>
-                <div class="form-hint">用户授权后会跳转到这些URL，每行一个URL</div>
+                <label for="redirect_uris" class="form-label" style="color: black"><i class="fas fa-link"></i> 回调URL</label>
+                <textarea id="redirect_uris" name="redirect_uris" class="form-textarea" rows="5" style="border: 1px solid black; color: black;" required></textarea>
+                <div class="form-hint" style="color: green">用户授权后会跳转到这些URL，每行一个URL</div>
             </div>
             <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()"
+                        style="border: 1px solid black; color: black">取消</button>
                 <button type="submit" class="btn btn-primary">保存更改</button>
             </div>
         </form>
