@@ -12,8 +12,20 @@
     <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
 
     {% block extra_css %}{% endblock %}
+
+    <style>
+        /* 页面加载初始样式 */
+        body {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        body.loaded {
+            opacity: 1;
+        }
+    </style>
 </head>
-<body>
+<body class="loading">
     <!-- Mobile Menu Button -->
     <button class="mobile-menu-btn" id="mobileMenuBtn">
         <i class="fas fa-bars"></i>
@@ -24,7 +36,9 @@
 
     <div class="main-container">
         <!-- Sidebar -->
-        {% include 'components/sidebar.html' %}
+        <div class="sidebar" id="sidebar">
+            {% include 'components/sidebar.html' %}
+        </div>
 
         <!-- Main Content -->
         <div class="content">
@@ -44,5 +58,16 @@
 
     <!-- Page Specific JS -->
     {% block extra_js %}{% endblock %}
+
+    <script>
+        // 页面加载完成后移除loading类
+        document.addEventListener('DOMContentLoaded', function() {
+            // 延迟一点确保所有初始化完成
+            setTimeout(function() {
+                document.body.classList.remove('loading');
+                document.body.classList.add('loaded');
+            }, 100);
+        });
+    </script>
 </body>
 </html>

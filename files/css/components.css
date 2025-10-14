@@ -1,7 +1,7 @@
 /* Sidebar Styles */
 .sidebar {
     width: 280px;
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.95); /* 增加不透明度 */
     padding: 25px;
     border-radius: 15px;
     box-shadow: 4px 4px 15px rgba(255, 255, 255, 0.5);
@@ -9,10 +9,15 @@
     flex-direction: column;
     backdrop-filter: blur(5px);
     transition: transform 0.3s ease;
+    z-index: 1001; /* 确保在遮罩之上 */
 }
 
 .sidebar.mobile-hidden {
     transform: translateX(-100%);
+}
+
+.sidebar:not(.mobile-hidden) {
+    transform: translateX(0);
 }
 
 .sidebar-header {
@@ -86,24 +91,36 @@
     background-color: rgba(255, 69, 0, 0.9) !important;
 }
 
-/* Mobile Menu */
+/* 移动端菜单按钮 */
 .mobile-menu-btn {
-    display: none;
     position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.5);
+    top: 20px;
+    left: 20px;
+    z-index: 1002;
+    background: rgba(255, 255, 255, 0.9);
     border: none;
     border-radius: 50%;
     width: 50px;
     height: 50px;
     font-size: 1.5rem;
     color: #333;
-    box-shadow: 4px 4px 15px rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     cursor: pointer;
+    transition: all 0.3s ease;
+    display: none; /* 默认隐藏，移动端显示 */
 }
 
+.mobile-menu-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+.mobile-menu-btn.active {
+    background: rgba(66, 133, 244, 0.9);
+    color: white;
+}
+
+/* 移动端遮罩 */
 .overlay {
     display: none;
     position: fixed;
@@ -111,8 +128,14 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 999;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000; /* 在侧边栏之下，在内容之上 */
+    backdrop-filter: blur(3px);
+}
+
+.overlay.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
 }
 
 /* Flash Messages */
@@ -231,4 +254,56 @@
 @keyframes slideOut {
     from { transform: translateX(0); opacity: 1; }
     to { transform: translateX(100%); opacity: 0; }
+}
+
+/* 移动端显示菜单按钮 */
+@media (max-width: 767px) {
+    .mobile-menu-btn {
+        display: flex !important; /* 强制显示 */
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 确保菜单按钮在所有页面都可见 */
+    .mobile-menu-btn.active {
+        background: rgba(66, 133, 244, 0.9) !important;
+        color: white !important;
+    }
+
+    /* 页面加载时确保菜单按钮状态正确 */
+    body.loading .mobile-menu-btn {
+        display: flex !important;
+    }
+}
+
+/* 桌面端隐藏菜单按钮 */
+@media (min-width: 768px) {
+    .mobile-menu-btn {
+        display: none !important;
+    }
+}
+
+/* 侧边栏移动端样式 */
+@media (max-width: 767px) {
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        border-radius: 0;
+        box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1001;
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .sidebar.mobile-visible {
+        transform: translateX(0);
+    }
+
+    .sidebar.mobile-hidden {
+        transform: translateX(-100%);
+    }
 }
