@@ -9,3 +9,4 @@ pymysql
 cryptography
 Pillow
 sqlalchemy
+flask-cors

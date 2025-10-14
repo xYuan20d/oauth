@@ -15,11 +15,13 @@ import json
 import base64
 from io import BytesIO
 from PIL import Image
+from flask_cors import CORS
 from dotenv import load_dotenv
 load_dotenv()
 
 # 初始化Flask应用
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "files"))
+CORS(app)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 # 数据库配置
