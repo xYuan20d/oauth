@@ -5,7 +5,7 @@
     <div class="user-avatar" id="sidebar-avatar">
         {% if user and user.avatar %}
             <!-- 头像先为空，由 JavaScript 动态更新 -->
-            <img src="" alt="{{ user.username }}的头像" class="sidebar-avatar-img" id="sidebar-avatar-img">
+            <img src="" alt="" class="sidebar-avatar-img" id="sidebar-avatar-img">
         {% elif user %}
             <div class="sidebar-avatar-text">
                 {{ user.username[0].upper() }}
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 先检查 localStorage 是否有缓存的头像
     const cachedAvatar = localStorage.getItem('userAvatar');
-    if (cachedAvatar) {
+    if (false) {  // 禁用缓存
         // 如果缓存中有头像，直接使用缓存的头像
         sidebarAvatarImg.src = cachedAvatar;
     } else if (sidebarAvatarImg) {
