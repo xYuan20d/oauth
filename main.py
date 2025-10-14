@@ -12,7 +12,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from datetime import datetime, timedelta
 import json
-
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -109,14 +108,14 @@ class EmailVerificationCode(db.Model):
     used = db.Column(DatabaseCompat.boolean_type(), default=False)
 
 
-# 用户模型 - 使用足够长的VARCHAR类型
+# 用户模型
 class User(UserMixin, db.Model):
     id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
     username = db.Column(DatabaseCompat.string_type(150), unique=True, nullable=False)
-    # 使用足够长的VARCHAR类型存储密码哈希
     password_hash = db.Column(DatabaseCompat.string_type(500), nullable=False)
     email = db.Column(DatabaseCompat.string_type(150), unique=True, nullable=False)
     email_verified = db.Column(DatabaseCompat.boolean_type(), default=False)
+    avatar = db.Column(DatabaseCompat.text_type())  # base64头像数据
 
     # OAuth相关
     oauth_clients = db.relationship('OAuthClient', backref='user', lazy=True)
@@ -124,7 +123,6 @@ class User(UserMixin, db.Model):
     access_tokens = db.relationship('AccessToken', backref='user', lazy=True)
 
 
-# 在main.py中添加以下模型
 class ClientUserData(db.Model):
     id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
     client_id = db.Column(DatabaseCompat.string_type(40), nullable=False)  # 第三方客户端ID
@@ -416,7 +414,7 @@ def login():
 def dashboard():
     return render_template('dashboard.html', user=current_user)
 
-
+# 设置
 @app.route('/settings')
 @login_required
 def settings():
@@ -650,6 +648,10 @@ def oauth_userinfo():
         'username': user.username,
         'email': user.email
     }
+
+    # 如果有头像，添加到用户信息中
+    if user.avatar:
+        user_info['avatar'] = user.avatar
 
     return jsonify(user_info)
 
@@ -1412,6 +1414,53 @@ def get_authorization_details(client_id):
 def authorized_apps():
     """授权管理页面"""
     return render_template('authorized_apps.html', user=current_user)
+
+
+@app.route('/api/upload_avatar', methods=['POST'])
+@login_required
+def upload_avatar():
+    """上传用户头像"""
+    try:
+        data = request.get_json()
+        if not data or 'avatar' not in data:
+            return jsonify({'success': False, 'error': '没有接收到头像数据'})
+
+        avatar_data = data['avatar']
+
+        # 验证base64数据格式
+        if not avatar_data.startswith('data:image/'):
+            return jsonify({'success': False, 'error': '无效的图片格式'})
+
+        # 检查文件大小（4MB限制）
+        if len(avatar_data) > 4 * 1024 * 1024:  # 4MB
+            return jsonify({'success': False, 'error': '头像文件大小不能超过4MB'})
+
+        # 更新用户头像
+        current_user.avatar = avatar_data
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '头像更新成功',
+            'avatar_url': avatar_data  # 返回完整的data URL
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'上传失败: {str(e)}'})
+
+
+@app.route('/api/remove_avatar', methods=['POST'])
+@login_required
+def remove_avatar():
+    """移除用户头像"""
+    try:
+        current_user.avatar = None
+        db.session.commit()
+        return jsonify({'success': True, 'message': '头像已移除'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'移除失败: {str(e)}'})
 
 
 if __name__ == '__main__':

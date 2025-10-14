@@ -1,9 +1,18 @@
+<!-- 引入头像样式 -->
+<link href="{{ url_for('static', filename='css/avatar.css') }}" rel="stylesheet">
+
 <div class="sidebar-header">
-    <div class="user-avatar">
-        {% if user %}
-            {{ user.username[0].upper() }}
+    <div class="user-avatar" id="sidebar-avatar">
+        {% if user and user.avatar %}
+            <img src="{{ user.avatar }}" alt="{{ user.username }}的头像" class="sidebar-avatar-img">
+        {% elif user %}
+            <div class="sidebar-avatar-text">
+                {{ user.username[0].upper() }}
+            </div>
         {% else %}
-            <i class="fas fa-user"></i>
+            <div class="sidebar-avatar-icon">
+                <i class="fas fa-user"></i>
+            </div>
         {% endif %}
     </div>
     <h3>{{ user.username if user else '用户' }}</h3>
@@ -33,3 +42,25 @@
         <i class="fas fa-sign-out-alt"></i>退出登录
     </a>
 </div>
+
+<script>
+// 监听头像更新事件
+document.addEventListener('DOMContentLoaded', function() {
+    // 监听自定义事件，当头像更新时刷新侧边栏显示
+    document.addEventListener('avatarUpdated', function(event) {
+        const sidebarAvatar = document.getElementById('sidebar-avatar');
+        if (sidebarAvatar && event.detail && event.detail.avatarUrl) {
+            sidebarAvatar.innerHTML = `<img src="${event.detail.avatarUrl}" alt="用户头像" class="sidebar-avatar-img">`;
+        }
+    });
+
+    // 监听头像移除事件
+    document.addEventListener('avatarRemoved', function() {
+        const sidebarAvatar = document.getElementById('sidebar-avatar');
+        const username = '{{ user.username if user else "" }}';
+        if (sidebarAvatar && username) {
+            sidebarAvatar.innerHTML = `<div class="sidebar-avatar-text">${username[0].upper()}</div>`;
+        }
+    });
+});
+</script>
