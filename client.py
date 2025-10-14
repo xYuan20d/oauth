@@ -192,6 +192,7 @@ def profile():
     <p>用户名: {user.get('username')}</p>
     <p>邮箱: {user.get('email')}</p>
     <p>用户ID: {user.get('sub')}</p>
+    <p>头像(base64):</p>
 
     <h2>存储的数据</h2>
     {data_display if data_display else '<p>暂无数据</p>'}

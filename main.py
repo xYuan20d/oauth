@@ -12,6 +12,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from datetime import datetime, timedelta
 import json
+import base64
+from io import BytesIO
+from PIL import Image
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -1416,7 +1419,7 @@ def authorized_apps():
 @app.route('/api/upload_avatar', methods=['POST'])
 @login_required
 def upload_avatar():
-    """上传用户头像"""
+    """上传并转换用户头像为PNG格式"""
     try:
         data = request.get_json()
         if not data or 'avatar' not in data:
@@ -1428,12 +1431,23 @@ def upload_avatar():
         if not avatar_data.startswith('data:image/'):
             return jsonify({'success': False, 'error': '无效的图片格式'})
 
-        # 更严格的大小限制：200KB
-        if len(avatar_data) > 200 * 1024:
-            return jsonify({'success': False, 'error': '头像文件大小不能超过200KB'})
+        # 从 Base64 数据中提取图片内容
+        header, encoded_image = avatar_data.split(',', 1)  # 分割头部和数据部分
+        img_data = base64.b64decode(encoded_image)
+
+        # 将字节数据加载为图片
+        img = Image.open(BytesIO(img_data))
+
+        # 将图片转换为 PNG 格式
+        output = BytesIO()
+        img.convert("RGBA").save(output, format="PNG")
+        output.seek(0)
+
+        # 将 PNG 图像转回 Base64 编码
+        img_base64 = base64.b64encode(output.getvalue()).decode('utf-8')
 
         # 更新用户头像
-        current_user.avatar = avatar_data
+        current_user.avatar = img_base64
         db.session.commit()
 
         return jsonify({
