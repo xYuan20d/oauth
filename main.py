@@ -272,7 +272,7 @@ def send_verification_email(email, verification_code):
 
         # 创建邮件
         msg = MIMEText(content, 'html', 'utf-8')
-        msg['From'] = Header(f'OAuth认证平台 <{from_addr}>', 'utf-8')
+        msg['From'] = from_addr
         msg['To'] = Header(email, 'utf-8')
         msg['Subject'] = Header(subject, 'utf-8')
 
