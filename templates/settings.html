@@ -27,7 +27,8 @@
         <div class="avatar-container">
             <div class="avatar-preview" id="avatar-preview">
                 {% if user.avatar %}
-                    <img src="{{ user.avatar }}" alt="用户头像">
+                    <!-- 默认头像为空，稍后通过JavaScript动态更新 -->
+                    <img src="" alt="用户头像" id="current-avatar">
                 {% else %}
                     <div class="default-avatar" id="default-avatar">
                         <i class="fas fa-user"></i>
@@ -203,4 +204,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 <script src="{{ url_for('static', filename='js/avatar.js') }}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 如果用户有头像，加载头像
+    const avatarImg = document.getElementById('current-avatar');
+    if (avatarImg) {
+        fetch('/api/user/avatar')
+            .then(response => response.json())
+            .then(data => {
+                if (data.avatar) {
+                    // 更新头像的 src 为返回的 base64 数据
+                    avatarImg.src = 'data:image/png;base64,' + data.avatar;
+                }
+            })
+            .catch(error => {
+                console.error('获取头像失败:', error);
+            });
+    }
+});
+</script>
 {% endblock %}

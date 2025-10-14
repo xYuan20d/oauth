@@ -4,7 +4,8 @@
 <div class="sidebar-header">
     <div class="user-avatar" id="sidebar-avatar">
         {% if user and user.avatar %}
-            <img src="{{ user.avatar }}" alt="{{ user.username }}的头像" class="sidebar-avatar-img">
+            <!-- 头像先为空，由 JavaScript 动态更新 -->
+            <img src="" alt="{{ user.username }}的头像" class="sidebar-avatar-img" id="sidebar-avatar-img">
         {% elif user %}
             <div class="sidebar-avatar-text">
                 {{ user.username[0].upper() }}
@@ -46,6 +47,22 @@
 <script>
 // 监听头像更新事件
 document.addEventListener('DOMContentLoaded', function() {
+    // 如果当前有头像，发起请求来加载头像数据
+    const sidebarAvatarImg = document.getElementById('sidebar-avatar-img');
+    if (sidebarAvatarImg) {
+        fetch('/api/user/avatar')
+            .then(response => response.json())
+            .then(data => {
+                if (data.avatar) {
+                    // 更新头像的src为返回的base64数据
+                    sidebarAvatarImg.src = 'data:image/png;base64,' + data.avatar;
+                }
+            })
+            .catch(error => {
+                console.error('获取头像失败:', error);
+            });
+    }
+
     // 监听自定义事件，当头像更新时刷新侧边栏显示
     document.addEventListener('avatarUpdated', function(event) {
         const sidebarAvatar = document.getElementById('sidebar-avatar');
