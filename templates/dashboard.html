@@ -2,62 +2,311 @@
 
 {% block title %}控制中心 - {{ user.username }}{% endblock %}
 
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+{% endblock %}
+
 {% block header %}
-{% include 'components/header.html' %}
+<div class="page-header">
+    <h1>欢迎回来, {{ user.username }}!</h1>
+    <p>您正在使用 OAuth 认证平台控制中心</p>
+</div>
 {% endblock %}
 
 {% block content %}
-<!-- Welcome Section -->
-<div class="card welcome-section">
-    <h1>欢迎回来, {{ user.username }}!</h1>
-    <p>您正在使用 OAuth 认证平台控制中心</p>
-    <div class="stats">
-        <div class="stat-item">
-            <span class="stat-number" id="my-apps-count">加载中</span>
-            <span class="stat-label">我的应用</span>
+<!-- Quick Stats Row -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-code"></i>
         </div>
-        <div class="stat-item">
-            <span class="stat-number" id="authorized-users-count">加载中</span>
-            <span class="stat-label">授权用户</span>
+        <div class="stat-info">
+            <div class="stat-number" id="my-apps-count">0</div>
+            <div class="stat-label">我的应用</div>
         </div>
-        <div class="stat-item">
-            <span class="stat-number" id="active-sessions-count">加载中</span>
-            <span class="stat-label">活跃会话</span>
+        <a href="{{ url_for('oauth_clients') }}" class="stat-action">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-number" id="authorized-users-count">0</div>
+            <div class="stat-label">授权用户</div>
+        </div>
+        <a href="{{ url_for('authorized_apps') }}" class="stat-action">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-number" id="active-sessions-count">0</div>
+            <div class="stat-label">活跃会话</div>
+        </div>
+        <a href="#" class="stat-action">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">
+            <i class="fas fa-database"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-number" id="total-authorizations-count">0</div>
+            <div class="stat-label">总授权</div>
+        </div>
+        <a href="#" class="stat-action">
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Main Dashboard Grid -->
+<div class="dashboard-main-grid">
+    <!-- Left Column: Quick Actions & Recent Activity -->
+    <div class="dashboard-left-column">
+        <!-- Quick Actions -->
+        <div class="dashboard-card quick-actions-card">
+            <div class="card-header">
+                <h3><i class="fas fa-bolt"></i> 快速操作</h3>
+            </div>
+            <div class="quick-actions-grid">
+                <a href="{{ url_for('create_oauth_client') }}" class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="action-info">
+                        <div class="action-title">创建应用</div>
+                        <div class="action-desc">新建 OAuth 应用</div>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('oauth_clients') }}" class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="action-info">
+                        <div class="action-title">管理应用</div>
+                        <div class="action-desc">查看所有应用</div>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('authorized_apps') }}" class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="action-info">
+                        <div class="action-title">授权管理</div>
+                        <div class="action-desc">管理第三方授权</div>
+                    </div>
+                </a>
+
+                <a href="{{ url_for('settings') }}" class="quick-action">
+                    <div class="action-icon">
+                        <i class="fas fa-cog"></i>
+                    </div>
+                    <div class="action-info">
+                        <div class="action-title">账户设置</div>
+                        <div class="action-desc">修改个人信息</div>
+                    </div>
+                </a>
+
+                <button class="quick-action" onclick="storeSampleData()">
+                    <div class="action-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="action-info">
+                        <div class="action-title">测试数据</div>
+                        <div class="action-desc">添加示例数据</div>
+                    </div>
+                </button>
+
+                <button class="quick-action" onclick="clearData()">
+                    <div class="action-icon">
+                        <i class="fas fa-broom"></i>
+                    </div>
+                    <div class="action-info">
+                        <div class="action-title">清除数据</div>
+                        <div class="action-desc">清理所有数据</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fas fa-history"></i> 最近活动</h3>
+                <a href="#" class="view-all">查看全部</a>
+            </div>
+            <div class="activity-list" id="recent-activities">
+                <div class="activity-item loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>加载中...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Main Features & System Status -->
+    <div class="dashboard-right-column">
+        <!-- Developer Center -->
+        <div class="dashboard-card feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="feature-info">
+                    <h3>开发者中心</h3>
+                    <p>创建和管理 OAuth 应用</p>
+                </div>
+            </div>
+            <div class="feature-actions">
+                <a href="{{ url_for('oauth_clients') }}" class="btn btn-primary btn-small">
+                    <i class="fas fa-list"></i> 我的应用
+                </a>
+                <a href="{{ url_for('create_oauth_client') }}" class="btn btn-secondary btn-small">
+                    <i class="fas fa-plus"></i> 创建应用
+                </a>
+            </div>
+        </div>
+
+        <!-- Authorization Management -->
+        <div class="dashboard-card feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="feature-info">
+                    <h3>授权管理</h3>
+                    <p>管理第三方应用授权</p>
+                </div>
+            </div>
+            <div class="feature-actions">
+                <a href="{{ url_for('authorized_apps') }}" class="btn btn-primary btn-small">
+                    <i class="fas fa-shield-alt"></i> 管理授权
+                </a>
+                <a href="{{ url_for('authorized_apps') }}" class="btn btn-secondary btn-small">
+                    <i class="fas fa-database"></i> 查看数据
+                </a>
+            </div>
+        </div>
+
+        <!-- Data Analytics -->
+        <div class="dashboard-card feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="feature-info">
+                    <h3>数据统计</h3>
+                    <p>查看使用情况和统计</p>
+                </div>
+            </div>
+            <div class="feature-stats">
+                <div class="mini-stat">
+                    <div class="mini-stat-number" id="monthly-authorizations-count">0</div>
+                    <div class="mini-stat-label">本月新增</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="mini-stat-number" id="weekly-active-count">0</div>
+                    <div class="mini-stat-label">本周活跃</div>
+                </div>
+            </div>
+            <div class="feature-actions">
+                <a href="#" class="btn btn-secondary btn-small">
+                    <i class="fas fa-chart-line"></i> 详细统计
+                </a>
+            </div>
+        </div>
+
+        <!-- Security & Settings -->
+        <div class="dashboard-card feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="feature-info">
+                    <h3>安全设置</h3>
+                    <p>管理账户安全和偏好</p>
+                </div>
+            </div>
+            <div class="feature-actions">
+                <a href="{{ url_for('settings') }}" class="btn btn-primary btn-small">
+                    <i class="fas fa-cog"></i> 账户设置
+                </a>
+                <a href="{{ url_for('settings') }}" class="btn btn-secondary btn-small">
+                    <i class="fas fa-key"></i> 修改密码
+                </a>
+            </div>
+        </div>
+
+        <!-- API Documentation -->
+        <div class="dashboard-card feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="feature-info">
+                    <h3>API 文档</h3>
+                    <p>集成指南和 API 参考</p>
+                </div>
+            </div>
+            <div class="feature-actions">
+                <a href="#" class="btn btn-primary btn-small">
+                    <i class="fas fa-book-open"></i> 查看文档
+                </a>
+                <a href="#" class="btn btn-secondary btn-small">
+                    <i class="fas fa-code"></i> API 参考
+                </a>
+            </div>
+        </div>
+
+        <!-- Help & Support -->
+        <div class="dashboard-card feature-card">
+            <div class="feature-header">
+                <div class="feature-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="feature-info">
+                    <h3>帮助与支持</h3>
+                    <p>获取帮助和联系支持</p>
+                </div>
+            </div>
+            <div class="feature-actions">
+                <a href="#" class="btn btn-primary btn-small">
+                    <i class="fas fa-question"></i> 常见问题
+                </a>
+                <a href="#" class="btn btn-secondary btn-small">
+                    <i class="fas fa-headset"></i> 联系支持
+                </a>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Dashboard Grid -->
-<div class="dashboard-grid">
-    <!-- Developer Center -->
-    <div class="card dashboard-card">
-        <div class="card-header">
-            <h2 class="card-title"><i class="fas fa-code"></i> 开发者中心</h2>
-        </div>
-        <div class="card-content">
-            <p>创建和管理您的 OAuth 应用，让其他用户可以通过您的应用进行登录授权。</p>
-            <div class="button-group mt-2">
-                <a href="{{ url_for('oauth_clients') }}" class="btn btn-primary">管理我的应用</a>
-                <a href="{{ url_for('create_oauth_client') }}" class="btn btn-secondary">创建新应用</a>
-            </div>
-        </div>
+<!-- System Status Bar -->
+<div class="system-status-bar">
+    <div class="status-item">
+        <span class="status-indicator online"></span>
+        <span class="status-text">系统状态: 在线</span>
     </div>
-
-    <!-- Authorization Management -->
-    <div class="card dashboard-card">
-        <div class="card-header">
-            <h2 class="card-title"><i class="fas fa-user-shield"></i> 授权管理</h2>
-        </div>
-        <div class="card-content">
-            <p>查看和管理您已授权的第三方应用，控制它们对您数据的访问权限。</p>
-            <div class="button-group mt-2">
-                <a href="{{ url_for('authorized_apps') }}" class="btn btn-primary">管理授权</a>
-                <a href="{{ url_for('authorized_apps') }}" class="btn btn-secondary">查看数据</a>
-            </div>
-        </div>
+    <div class="status-item">
+        <span class="status-text">最后更新: <span id="last-update-time">刚刚</span></span>
     </div>
-
-    <!-- More cards... -->
+    <div class="status-actions">
+        <button class="btn btn-secondary btn-very-small" onclick="refreshDashboard()">
+            <i class="fas fa-sync-alt"></i> 刷新
+        </button>
+    </div>
 </div>
 {% endblock %}
 

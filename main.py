@@ -446,7 +446,8 @@ def oauth_clients():
             # 如果解析失败，使用原始格式（每行一个）
             client.redirect_uris_parsed = [uri.strip() for uri in client.redirect_uris.split('\n') if uri.strip()]
 
-    return render_template('clients.html', clients=clients)
+    # 修复：添加user=current_user参数
+    return render_template('clients.html', clients=clients, user=current_user)
 
 
 @app.route('/oauth/clients/create', methods=['GET', 'POST'])
@@ -479,7 +480,8 @@ def create_oauth_client():
         flash(f'OAuth客户端创建成功！客户端ID: {client_id}', 'success')
         return redirect(url_for('oauth_clients'))
 
-    return render_template('create_client.html')
+    # 修复：添加user=current_user参数
+    return render_template('create_client.html', user=current_user)
 
 
 # OAuth授权端点
