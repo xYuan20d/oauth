@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth认证平台 - 邮箱验证</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            padding: 20px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .email-header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .email-body {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .message {
+            margin-bottom: 25px;
+            color: #555;
+            font-size: 16px;
+        }
+        .verification-code-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+            border: 1px dashed #e0e0e0;
+        }
+        .verification-code {
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: #2196F3;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        .warning-note {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 25px 0;
+            border-radius: 0 4px 4px 0;
+            font-size: 14px;
+        }
+        .warning-note p {
+            margin-bottom: 5px;
+        }
+        .action-button {
+            display: inline-block;
+            background-color: #2196F3;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 15px 0;
+            transition: all 0.3s ease;
+        }
+        .action-button:hover {
+            background-color: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        .email-footer {
+            padding: 20px;
+            background-color: #f5f7fa;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            border-top: 1px solid #eaeaea;
+        }
+        .footer-links {
+            margin-top: 10px;
+        }
+        .footer-links a {
+            color: #2196F3;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .brand-logo {
+            font-weight: 700;
+            color: #2196F3;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        @media (max-width: 480px) {
+            .email-body {
+                padding: 20px;
+            }
+            .verification-code {
+                font-size: 28px;
+                letter-spacing: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>OAuth认证平台</h1>
+            <p>邮箱验证</p>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">尊敬的 <strong>_e_m_a_i_l_</strong> 用户，您好！</p>
+
+            <p class="message">您正在注册OAuth认证平台账户，请使用以下验证码完成验证：</p>
+
+            <div class="verification-code-container">
+                <p style="margin-bottom: 10px; color: #666;">您的验证码为：</p>
+                <div class="verification-code">_c_o_d_e_</div>
+                <p style="color: #888; font-size: 14px;">验证码将在10分钟内有效，请尽快完成验证</p>
+            </div>
+
+            <div style="text-align: center;">
+                <a href="#" class="action-button">请复制上方验证码</a>
+            </div>
+
+            <div class="warning-note">
+                <p><strong>重要提示：</strong></p>
+                <p>• 请勿将此验证码透露给任何人</p>
+                <p>• 我们的工作人员不会向您索要验证码</p>
+                <p>• 如果这不是您本人的操作，请立即忽略此邮件</p>
+            </div>
+
+            <p class="message">如果您在验证过程中遇到任何问题，请查看我们的<a href="#" style="color: #2196F3;">帮助中心</a>或联系<a href="#" style="color: #2196F3;">客服支持</a>。</p>
+        </div>
+
+        <div class="email-footer">
+            <div class="brand-logo">OAuth认证平台</div>
+            <p>此邮件由系统自动发送，请勿直接回复</p>
+            <div class="footer-links">
+                <a href="#">隐私政策</a>
+                <a href="#">使用条款</a>
+                <a href="#">帮助中心</a>
+            </div>
+            <p style="margin-top: 15px;">© _y_e_a_r_ OAuth认证平台 版权所有</p>
+        </div>
+    </div>
+</body>
+</html>

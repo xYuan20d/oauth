@@ -210,20 +210,9 @@ def send_verification_email(email, verification_code):
 
         # 邮件内容
         subject = 'OAuth认证平台 - 邮箱验证码'
-        content = f"""
-        <html>
-        <body>
-            <h2>OAuth认证平台 - 邮箱验证</h2>
-            <p>尊敬的 {email} 用户，您好！</p>
-            <p>您正在注册OAuth认证平台账户，验证码为：</p>
-            <h1 style="color: #2196F3; font-size: 32px; text-align: center; letter-spacing: 5px;">{verification_code}</h1>
-            <p>验证码将在10分钟内有效，请尽快完成验证。</p>
-            <p>如果这不是您本人的操作，请忽略此邮件。</p>
-            <hr>
-            <p style="color: #666; font-size: 12px;">此邮件由系统自动发送，请勿回复。</p>
-        </body>
-        </html>
-        """
+        content = requests.get(request.url_root + url_for("serve_file", filename='html/mail.html')).text\
+            .replace("_e_m_a_i_l_", email).replace("_c_o_d_e_", verification_code)\
+            .replace("_y_e_a_r_", str(datetime.now().year))
 
         # 创建邮件
         msg = MIMEText(content, 'html', 'utf-8')
@@ -991,8 +980,7 @@ def edit_oauth_client(client_id):
     return redirect(url_for('oauth_clients'))
 
 
-@app.route('/files/<path:filename>')
-def serve_file(filename):
+def get_file(filename):
     # 获取当前脚本的绝对路径并拼接 "files" 目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     safe_path = os.path.join(current_dir, "files", filename)
@@ -1002,23 +990,23 @@ def serve_file(filename):
     if os.path.isfile(safe_path):
         # 如果文件存在，返回文件
         return send_from_directory(os.path.join(current_dir, "files"), filename)
+
+    return None
+
+@app.route('/files/<path:filename>')
+def serve_file(filename):
+    file = get_file(filename)
+    if file:
+        return file
     else:
-        # 如果文件不存在，返回 404 错误
         abort(404)
 
 @app.route('/static/<path:filename>')
 def serve_file_static(filename):
-    # 获取当前脚本的绝对路径并拼接 "files" 目录
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    safe_path = os.path.join(current_dir, "files", filename)
-    print(safe_path)
-
-    # 确保文件路径安全，防止路径遍历漏洞
-    if os.path.isfile(safe_path):
-        # 如果文件存在，返回文件
-        return send_from_directory(os.path.join(current_dir, "files"), filename)
+    file = get_file(filename)
+    if file:
+        return file
     else:
-        # 如果文件不存在，返回 404 错误
         abort(404)
 
 

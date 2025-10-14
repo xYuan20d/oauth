@@ -1,13 +1,94 @@
-// Dashboard functionality
+// Dashboard functionality with JavaScript animations
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Dashboard 初始化...');
+    initializeDashboardAnimations();
     loadDashboardStats();
     loadRecentActivities();
     startAutoRefresh();
 });
 
-// Load dashboard statistics
+// Initialize dashboard animations
+function initializeDashboardAnimations() {
+    // 设置所有动画元素的初始状态
+    const animatedElements = [
+        { selector: '.page-header', delay: 100 },
+        { selector: '.stats-row', delay: 200 },
+        { selector: '.stat-card:nth-child(1)', delay: 300 },
+        { selector: '.stat-card:nth-child(2)', delay: 400 },
+        { selector: '.stat-card:nth-child(3)', delay: 500 },
+        { selector: '.stat-card:nth-child(4)', delay: 600 },
+        { selector: '.quick-actions-card', delay: 400 },
+        { selector: '.quick-action:nth-child(1)', delay: 500 },
+        { selector: '.quick-action:nth-child(2)', delay: 600 },
+        { selector: '.quick-action:nth-child(3)', delay: 700 },
+        { selector: '.quick-action:nth-child(4)', delay: 800 },
+        { selector: '.quick-action:nth-child(5)', delay: 900 },
+        { selector: '.quick-action:nth-child(6)', delay: 1000 },
+        { selector: '.feature-card:nth-child(1)', delay: 300 },
+        { selector: '.feature-card:nth-child(2)', delay: 400 },
+        { selector: '.feature-card:nth-child(3)', delay: 500 },
+        { selector: '.feature-card:nth-child(4)', delay: 600 },
+        { selector: '.feature-card:nth-child(5)', delay: 700 },
+        { selector: '.feature-card:nth-child(6)', delay: 800 },
+        { selector: '.dashboard-card:not(.quick-actions-card):not(.feature-card)', delay: 500 },
+        { selector: '.activity-item', delay: 600 },
+        { selector: '.system-status-bar', delay: 700 }
+    ];
+
+    // 设置初始状态
+    animatedElements.forEach(item => {
+        const elements = document.querySelectorAll(item.selector);
+        elements.forEach(element => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        });
+    });
+
+    // 依次执行动画
+    animatedElements.forEach(item => {
+        setTimeout(() => {
+            const elements = document.querySelectorAll(item.selector);
+            elements.forEach(element => {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+
+                // 动画完成后清除内联样式，让CSS接管
+                setTimeout(() => {
+                    element.style.transition = '';
+                    element.style.transform = '';
+                    element.style.opacity = '';
+                }, 600);
+            });
+        }, item.delay);
+    });
+
+    // 为功能卡片添加特殊的缩放动画
+    setTimeout(() => {
+        const featureCards = document.querySelectorAll('.feature-card');
+        featureCards.forEach((card, index) => {
+            setTimeout(() => {
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.9)';
+
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+
+                    // 动画完成后清除内联样式
+                    setTimeout(() => {
+                        card.style.transition = '';
+                        card.style.transform = '';
+                        card.style.opacity = '';
+                    }, 500);
+                }, 50);
+            }, index * 100);
+        });
+    }, 800);
+}
+
+// 原有的其他函数保持不变
 async function loadDashboardStats() {
     const statIds = [
         'my-apps-count',
@@ -37,7 +118,7 @@ async function loadDashboardStats() {
         results.forEach((data, index) => {
             const element = document.getElementById(statIds[index]);
             if (element) {
-                // Add counting animation
+                // 添加数字计数动画
                 animateCount(element, data.count || 0);
             }
         });
@@ -123,6 +204,25 @@ function displayActivities(activities) {
             </div>
         </div>
     `).join('');
+
+    // 为新增的活动项添加动画
+    const newActivityItems = container.querySelectorAll('.activity-item');
+    newActivityItems.forEach((item, index) => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(20px)';
+        item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+        setTimeout(() => {
+            item.style.opacity = '1';
+            item.style.transform = 'translateX(0)';
+
+            setTimeout(() => {
+                item.style.transition = '';
+                item.style.transform = '';
+                item.style.opacity = '';
+            }, 500);
+        }, index * 100);
+    });
 }
 
 // Get icon for activity type
@@ -173,6 +273,13 @@ function refreshDashboard() {
         refreshBtn.disabled = true;
     }
 
+    // 添加刷新动画
+    const dashboardContent = document.querySelector('.dashboard-main-content');
+    if (dashboardContent) {
+        dashboardContent.style.transition = 'opacity 0.3s ease';
+        dashboardContent.style.opacity = '0.7';
+    }
+
     loadDashboardStats();
     loadRecentActivities();
 
@@ -180,6 +287,12 @@ function refreshDashboard() {
         if (refreshBtn) {
             refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 刷新';
             refreshBtn.disabled = false;
+        }
+        if (dashboardContent) {
+            dashboardContent.style.opacity = '1';
+            setTimeout(() => {
+                dashboardContent.style.transition = '';
+            }, 300);
         }
         showToast('仪表板已刷新', 'success');
     }, 1000);
@@ -223,25 +336,34 @@ function clearData() {
     });
 }
 
-// Add CSS for animations
-if (!document.querySelector('#dashboard-animations')) {
-    const style = document.createElement('style');
-    style.id = 'dashboard-animations';
-    style.textContent = `
-        .btn-refresh:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .stat-card:hover .stat-icon {
-            animation: pulse 0.5s ease;
-        }
+// 添加工具函数
+function showToast(message, type) {
+    // 简单的toast实现
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#34a853' : '#ea4335'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s;
     `;
-    document.head.appendChild(style);
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.style.opacity = '1', 10);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+}
+
+function confirmAction(message, callback) {
+    if (confirm(message)) {
+        callback();
+    }
 }
