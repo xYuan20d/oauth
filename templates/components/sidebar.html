@@ -47,15 +47,24 @@
 <script>
 // 监听头像更新事件
 document.addEventListener('DOMContentLoaded', function() {
-    // 如果当前有头像，发起请求来加载头像数据
     const sidebarAvatarImg = document.getElementById('sidebar-avatar-img');
-    if (sidebarAvatarImg) {
+
+    // 先检查 localStorage 是否有缓存的头像
+    const cachedAvatar = localStorage.getItem('userAvatar');
+    if (cachedAvatar) {
+        // 如果缓存中有头像，直接使用缓存的头像
+        sidebarAvatarImg.src = cachedAvatar;
+    } else if (sidebarAvatarImg) {
+        // 如果没有缓存，从服务器请求头像
         fetch('/api/user/avatar')
             .then(response => response.json())
             .then(data => {
                 if (data.avatar) {
+                    const avatarUrl = 'data:image/png;base64,' + data.avatar;
                     // 更新头像的src为返回的base64数据
-                    sidebarAvatarImg.src = 'data:image/png;base64,' + data.avatar;
+                    sidebarAvatarImg.src = avatarUrl;
+                    // 将头像保存到 localStorage 中
+                    localStorage.setItem('userAvatar', avatarUrl);
                 }
             })
             .catch(error => {
@@ -68,6 +77,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const sidebarAvatar = document.getElementById('sidebar-avatar');
         if (sidebarAvatar && event.detail && event.detail.avatarUrl) {
             sidebarAvatar.innerHTML = `<img src="${event.detail.avatarUrl}" alt="用户头像" class="sidebar-avatar-img">`;
+            // 更新 localStorage 中的头像
+            localStorage.setItem('userAvatar', event.detail.avatarUrl);
         }
     });
 
@@ -76,8 +87,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const sidebarAvatar = document.getElementById('sidebar-avatar');
         const username = '{{ user.username if user else "" }}';
         if (sidebarAvatar && username) {
-            sidebarAvatar.innerHTML = `<div class="sidebar-avatar-text">${username[0].upper()}</div>`;
+            sidebarAvatar.innerHTML = `<div class="sidebar-avatar-text">${username[0].toUpperCase()}</div>`;
         }
+        // 清除缓存中的头像
+        localStorage.removeItem('userAvatar');
     });
 });
 </script>
