@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from email.header import Header
 import random
 import string
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort, g
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -16,6 +16,10 @@ import base64
 from io import BytesIO
 from PIL import Image
 from flask_cors import CORS
+from functools import wraps
+from sqlalchemy import distinct, Text, String, DateTime, Integer, Boolean
+from sqlalchemy.dialects.mysql import MEDIUMTEXT
+from urllib.parse import urlencode
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -69,48 +73,39 @@ class DatabaseCompat:
     @staticmethod
     def distinct(column):
         """统一的distinct函数"""
-        from sqlalchemy import distinct
         return distinct(column)
 
     @staticmethod
     def text_type():
         """统一的文本类型"""
-        from sqlalchemy import Text
         return Text
 
     @staticmethod
     def medium_text_type():
         if USE_MYSQL:
-            from sqlalchemy.dialects.mysql import MEDIUMTEXT
-
             return MEDIUMTEXT
         else:
-            from sqlalchemy import Text
             return Text
 
 
     @staticmethod
     def string_type(length):
         """统一的字符串类型"""
-        from sqlalchemy import String
         return String(length)
 
     @staticmethod
     def datetime_type():
         """统一的日期时间类型"""
-        from sqlalchemy import DateTime
         return DateTime
 
     @staticmethod
     def integer_type():
         """统一的整数类型"""
-        from sqlalchemy import Integer
         return Integer
 
     @staticmethod
     def boolean_type():
         """统一的布尔类型"""
-        from sqlalchemy import Boolean
         return Boolean
 
 
@@ -193,6 +188,67 @@ class AccessToken(db.Model):
 with app.app_context():
     db.create_all()
 
+def token_required(f):
+    """OAuth令牌认证装饰器"""
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        # 从Authorization头获取访问令牌
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify(error='invalid_token', error_description='无效的访问令牌'), 401
+
+        access_token = auth_header[7:]  # 去掉'Bearer '前缀
+
+        # 验证访问令牌
+        token = AccessToken.query.filter_by(token=access_token).first()
+        if not token:
+            return jsonify(error='invalid_token', error_description='无效的访问令牌'), 401
+
+        if token.expires_at < datetime.utcnow():
+            return jsonify(error='invalid_token', error_description='访问令牌已过期'), 401
+
+        # 将令牌和用户信息添加到请求上下文中
+        g.access_token = token
+        g.current_user = User.query.get(token.user_id)
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+def token_required_or_optional(optional=False):
+    """可选的OAuth令牌认证装饰器"""
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # 从Authorization头获取访问令牌
+            auth_header = request.headers.get('Authorization')
+
+            if auth_header and auth_header.startswith('Bearer '):
+                access_token = auth_header[7:]
+
+                # 验证访问令牌
+                token = AccessToken.query.filter_by(token=access_token).first()
+                if token and token.expires_at >= datetime.utcnow():
+                    g.access_token = token
+                    g.current_user = User.query.get(token.user_id)
+                    g.has_valid_token = True
+                else:
+                    g.has_valid_token = False
+            else:
+                g.has_valid_token = False
+
+            # 如果要求必须要有令牌但验证失败
+            if not optional and not g.has_valid_token:
+                return jsonify(error='invalid_token', error_description='需要有效的访问令牌'), 401
+
+            return f(*args, **kwargs)
+
+        return decorated_function
+
+    return decorator
 
 # 发送邮件函数
 def send_verification_email(email, verification_code):
@@ -546,7 +602,6 @@ def oauth_authorize():
             if state:
                 params['state'] = state
 
-            from urllib.parse import urlencode
             redirect_url = f"{redirect_uri}?{urlencode(params)}"
             return redirect(redirect_url)
         else:
@@ -1483,14 +1538,28 @@ def get_user_avatar():
     if not current_user.avatar:
         return jsonify({'error': '用户没有设置头像'}), 404
 
-    # 返回头像数据
     return jsonify({
         'avatar': current_user.avatar
     })
 
 
-# 获取指定用户头像的路由（公开或受保护的）
-@app.route('/api/user/<int:user_id>/avatar')
+# 新增OAuth专用端点（给第三方应用用）
+@app.route('/oauth/avatar')
+@token_required  # 严格的令牌认证，必须要有有效令牌
+def oauth_user_avatar():
+    """通过OAuth令牌获取对应用户的头像 - 第三方应用专用"""
+    user = g.current_user
+
+    if not user.avatar:
+        return jsonify({'error': '用户没有设置头像'}), 404
+
+    return jsonify({
+        'avatar': user.avatar
+    })
+
+
+@app.route('/oauth/user/<int:user_id>/avatar')
+@token_required
 def get_specific_user_avatar(user_id):
     """获取指定用户的头像"""
     user = User.query.get_or_404(user_id)

@@ -11,8 +11,8 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 1800  # 30分钟过期
 
 # OAuth配置
 OAUTH_SERVER = 'http://127.0.0.1:12345'  # 认证系统地址
-CLIENT_ID = 'aZ-RgRmQd-KssBmI5Pp5Zxr85us'
-CLIENT_SECRET = '9WSsOV2EySTZaPfnT0rNQTbfyBTxVDSYMseznPFd'
+CLIENT_ID = '0zMBa255x7yzxJdsfydzHVF71lI'
+CLIENT_SECRET = 'WaVqUA0RQ0v-r0eFmHUhvUgeG9YkO53owO50lKIu'
 REDIRECT_URI = 'http://127.0.0.1:8000/oauth/callback'
 
 
