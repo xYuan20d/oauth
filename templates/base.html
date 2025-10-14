@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OAuth 控制中心{% endblock %}</title>
+
+    <!-- CSS Files -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/components.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/responsive.css') }}" rel="stylesheet">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Menu Button -->
+    <button class="mobile-menu-btn" id="mobileMenuBtn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Mobile Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <div class="main-container">
+        <!-- Sidebar -->
+        {% include 'components/sidebar.html' %}
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Flash Messages -->
+            {% include 'components/flash_messages.html' %}
+
+            <!-- Page Header -->
+            {% block header %}{% endblock %}
+
+            <!-- Main Content -->
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <!-- Common JS -->
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+
+    <!-- Page Specific JS -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

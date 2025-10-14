@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 初始化Flask应用
-app = Flask(__name__)
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "files"))
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 # 数据库配置
@@ -976,6 +976,21 @@ def edit_oauth_client(client_id):
 
 @app.route('/files/<path:filename>')
 def serve_file(filename):
+    # 获取当前脚本的绝对路径并拼接 "files" 目录
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    safe_path = os.path.join(current_dir, "files", filename)
+    print(safe_path)
+
+    # 确保文件路径安全，防止路径遍历漏洞
+    if os.path.isfile(safe_path):
+        # 如果文件存在，返回文件
+        return send_from_directory(os.path.join(current_dir, "files"), filename)
+    else:
+        # 如果文件不存在，返回 404 错误
+        abort(404)
+
+@app.route('/static/<path:filename>')
+def serve_file_static(filename):
     # 获取当前脚本的绝对路径并拼接 "files" 目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     safe_path = os.path.join(current_dir, "files", filename)

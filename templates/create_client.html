@@ -1,528 +1,294 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <title>创建OAuth应用</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+{% extends "base.html" %}
 
-        body {
-            font-family: 'Arial', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            background: url('/files/images/background.gif') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-            padding: 20px;
-        }
+{% block title %}创建OAuth应用{% endblock %}
 
-        .main-container {
-            display: flex;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            gap: 20px;
-            min-height: calc(100vh - 40px);
-        }
+{% block extra_css %}
+<style>
+    /* Create client specific styles */
+    .form-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
 
-        .sidebar {
-            width: 280px;
-            background-color: rgba(255, 255, 255, 0.5);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 4px 4px 15px rgba(255, 255, 255, 0.5);
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(5px);
-        }
+    .form-container {
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 30px;
+        border-radius: 12px;
+        flex: 1;
+    }
 
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            color: black;
-            text-decoration: none;
-            font-size: 1.1rem;
-            margin: 8px 0;
-            background-color: transparent;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
+    .example {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 12px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        border-left: 3px solid #4285f4;
+    }
 
-        .sidebar a i {
-            margin-right: 12px;
-            width: 20px;
-            text-align: center;
-        }
+    .button-group {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
 
-        .sidebar a:hover {
-            background-color: rgba(240, 240, 240, 0.7);
-            transform: translateX(5px);
-        }
+    .info-card {
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        border-left: 4px solid #4285f4;
+    }
 
-        .content {
-            flex: 1;
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            display: flex;
-            flex-direction: column;
-        }
+    .info-card.success {
+        border-left-color: #34a853;
+    }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-        }
+    .info-card h3 {
+        margin-bottom: 15px;
+        color: #4285f4;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-            color: #FFD700;
-        }
+    .info-card.success h3 {
+        color: #34a853;
+    }
 
-        .header p {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.8);
-        }
+    .info-card p {
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
 
-        .form-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+    .info-card ul, .info-card ol {
+        padding-left: 20px;
+        margin-bottom: 15px;
+    }
 
-        .form-container {
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 30px;
-            border-radius: 12px;
-            flex: 1;
-        }
+    .info-card li {
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
 
-        .form-group {
-            margin-bottom: 25px;
-        }
+    /* Error message styles */
+    .error-message {
+        background-color: rgba(234, 67, 53, 0.2);
+        color: #ff6b6b;
+        padding: 12px 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border-left: 4px solid #ea4335;
+        display: none;
+    }
 
-        label {
-            display: block;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
+    .error-message.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
 
-        input[type="text"],
-        textarea {
-            width: 100%;
-            padding: 14px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            font-size: 1rem;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            transition: all 0.3s ease;
-        }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
 
-        input[type="text"]:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #4285f4;
-            box-shadow: 0 0 8px rgba(66, 133, 244, 0.5);
-            background-color: rgba(255, 255, 255, 0.15);
-        }
+{% block header %}
+<div class="page-header">
+    <h1><i class="fas fa-plus-circle"></i> 创建OAuth应用</h1>
+    <p>配置您的OAuth客户端，让其他用户可以通过您的应用进行登录授权</p>
+</div>
+{% endblock %}
 
-        textarea {
-            resize: vertical;
-            min-height: 120px;
-            font-family: inherit;
-        }
+{% block content %}
+<!-- Error Message (Hidden by default) -->
+<div class="error-message" id="error-message">
+    <i class="fas fa-exclamation-circle"></i> <span id="error-text"></span>
+</div>
 
-        .form-hint {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 8px;
-            line-height: 1.4;
-        }
+<!-- Info Card -->
+<div class="info-card">
+    <h3><i class="fas fa-info-circle"></i> 什么是OAuth应用？</h3>
+    <p>创建OAuth应用后，其他用户可以通过您的应用进行登录授权。您将获得：</p>
+    <ul>
+        <li><strong>Client ID</strong> - 应用的公开标识符</li>
+        <li><strong>Client Secret</strong> - 应用的私密密钥（请妥善保管）</li>
+    </ul>
+    <p>其他用户只需要在您的应用中点击"使用OAuth登录"，即可完成授权流程。</p>
+</div>
 
-        .example {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 12px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            border-left: 3px solid #4285f4;
-        }
+<!-- Form Section -->
+<div class="form-section">
+    <div class="form-container">
+        <form method="POST" id="create-app-form">
+            <div class="form-group">
+                <label for="client_name" class="form-label"><i class="fas fa-tag"></i> 应用名称</label>
+                <input type="text" name="client_name" id="client_name" class="form-input" placeholder="例如：我的博客应用" required>
+                <div class="form-hint">为用户显示的应用名称，应简洁明了</div>
+            </div>
 
-        .button-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .btn {
-            padding: 14px 28px;
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-decoration: none;
-            min-width: 140px;
-        }
-
-        .btn:hover {
-            background-color: #3367d6;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-
-        .btn-secondary {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .btn-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .info-card {
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            border-left: 4px solid #4285f4;
-        }
-
-        .info-card.success {
-            border-left-color: #34a853;
-        }
-
-        .info-card h3 {
-            margin-bottom: 15px;
-            color: #4285f4;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .info-card.success h3 {
-            color: #34a853;
-        }
-
-        .info-card p {
-            margin-bottom: 12px;
-            line-height: 1.5;
-        }
-
-        .info-card ul, .info-card ol {
-            padding-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .info-card li {
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        code {
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-        }
-
-        .user-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4285f4, #34a853);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 0 auto 20px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        /* 响应式设计 */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .main-container {
-                flex-direction: column;
-                min-height: auto;
-            }
-
-            .sidebar {
-                width: 100%;
-                margin-bottom: 20px;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .button-group {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn {
-                width: 100%;
-                max-width: 300px;
-            }
-        }
-
-        /* 错误提示样式 */
-        .error-message {
-            background-color: rgba(234, 67, 53, 0.2);
-            color: #ff6b6b;
-            padding: 12px 15px;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            border-left: 4px solid #ea4335;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-</head>
-<body>
-    <div class="main-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div style="text-align: center; margin-bottom: 25px;">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
+            <div class="form-group">
+                <label for="redirect_uris" class="form-label"><i class="fas fa-link"></i> 回调URL</label>
+                <textarea name="redirect_uris" id="redirect_uris" class="form-textarea" placeholder="http://localhost:3000/auth/callback&#10;https://myapp.com/oauth/callback" required></textarea>
+                <div class="form-hint">
+                    用户授权后会跳转到这些URL，每行一个URL<br>
+                    确保这些URL在您的应用中能够处理OAuth回调
                 </div>
-                <h3 style="color: black; margin: 10px 0;">创建应用</h3>
-                <p style="color: #666; font-size: 0.9rem; margin: 0;">配置您的OAuth客户端</p>
-            </div>
-
-            <a href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left"></i> 返回面板</a>
-            <a href="{{ url_for('oauth_clients') }}"><i class="fas fa-list"></i> 应用列表</a>
-            <a href="{{ url_for('create_oauth_client') }}"><i class="fas fa-plus-circle"></i> 创建应用</a>
-            <a href="{{ url_for('authorized_apps') }}"><i class="fas fa-shield-alt"></i> 授权管理</a>
-
-            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.1);">
-                <a href="{{ url_for('logout') }}" style="background-color: rgba(255, 69, 0, 0.8); color: white;">
-                    <i class="fas fa-sign-out-alt"></i> 退出登录
-                </a>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Header -->
-            <div class="header">
-                <h1><i class="fas fa-plus-circle"></i> 创建OAuth应用</h1>
-                <p>配置您的OAuth客户端，让其他用户可以通过您的应用进行登录授权</p>
-            </div>
-
-            <!-- Error Message (Hidden by default) -->
-            <div class="error-message" id="error-message">
-                <i class="fas fa-exclamation-circle"></i> <span id="error-text"></span>
-            </div>
-
-            <!-- Info Card -->
-            <div class="info-card">
-                <h3><i class="fas fa-info-circle"></i> 什么是OAuth应用？</h3>
-                <p>创建OAuth应用后，其他用户可以通过您的应用进行登录授权。您将获得：</p>
-                <ul>
-                    <li><strong>Client ID</strong> - 应用的公开标识符</li>
-                    <li><strong>Client Secret</strong> - 应用的私密密钥（请妥善保管）</li>
-                </ul>
-                <p>其他用户只需要在您的应用中点击"使用OAuth登录"，即可完成授权流程。</p>
-            </div>
-
-            <!-- Form Section -->
-            <div class="form-section">
-                <div class="form-container">
-                    <form method="POST" id="create-app-form">
-                        <div class="form-group">
-                            <label for="client_name"><i class="fas fa-tag"></i> 应用名称</label>
-                            <input type="text" name="client_name" id="client_name" placeholder="例如：我的博客应用" required>
-                            <div class="form-hint">为用户显示的应用名称，应简洁明了</div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="redirect_uris"><i class="fas fa-link"></i> 回调URL</label>
-                            <textarea name="redirect_uris" id="redirect_uris" placeholder="http://localhost:3000/auth/callback&#10;https://myapp.com/oauth/callback" required></textarea>
-                            <div class="form-hint">
-                                用户授权后会跳转到这些URL，每行一个URL<br>
-                                确保这些URL在您的应用中能够处理OAuth回调
-                            </div>
-                            <div class="example">
-                                # 示例：<br>
-                                http://localhost:3000/auth/callback<br>
-                                https://myapp.com/oauth/callback<br>
-                                https://myapp.com/login/oauth
-                            </div>
-                        </div>
-
-                        <div class="button-group">
-                            <button type="submit" class="btn"><i class="fas fa-plus"></i> 创建应用</button>
-                            <a href="{{ url_for('oauth_clients') }}" class="btn btn-secondary"><i class="fas fa-times"></i> 取消</a>
-                        </div>
-                    </form>
+                <div class="example">
+                    # 示例：<br>
+                    http://localhost:3000/auth/callback<br>
+                    https://myapp.com/oauth/callback<br>
+                    https://myapp.com/login/oauth
                 </div>
             </div>
 
-            <!-- Success Info Card -->
-            <div class="info-card success" style="margin-top: 30px;">
-                <h3><i class="fas fa-lightbulb"></i> 下一步该做什么？</h3>
-                <p>创建应用后，您将获得 <strong>Client ID</strong> 和 <strong>Client Secret</strong>。在您的应用中：</p>
-                <ol>
-                    <li>将用户重定向到授权端点：<code>/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code</code></li>
-                    <li>在回调URL处理授权码，并使用它交换访问令牌</li>
-                    <li>使用访问令牌调用API获取用户信息</li>
-                </ol>
+            <div class="button-group">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> 创建应用</button>
+                <a href="{{ url_for('oauth_clients') }}" class="btn btn-secondary"><i class="fas fa-times"></i> 取消</a>
             </div>
-        </div>
+        </form>
     </div>
+</div>
 
-    <script>
-        // 显示错误消息
-        function showError(message) {
-            const errorElement = document.getElementById('error-message');
-            const errorText = document.getElementById('error-text');
+<!-- Success Info Card -->
+<div class="info-card success">
+    <h3><i class="fas fa-lightbulb"></i> 下一步该做什么？</h3>
+    <p>创建应用后，您将获得 <strong>Client ID</strong> 和 <strong>Client Secret</strong>。在您的应用中：</p>
+    <ol>
+        <li>将用户重定向到授权端点：<code>/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&response_type=code</code></li>
+        <li>在回调URL处理授权码，并使用它交换访问令牌</li>
+        <li>使用访问令牌调用API获取用户信息</li>
+    </ol>
+</div>
+{% endblock %}
 
-            errorText.textContent = message;
-            errorElement.classList.add('show');
-
-            // 滚动到错误消息
-            errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/form-validation.js') }}"></script>
+<script>
+    // Create client specific functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('create-app-form');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (validateClientForm()) {
+                    this.submit();
+                }
+            });
         }
 
-        // 隐藏错误消息
-        function hideError() {
-            document.getElementById('error-message').classList.remove('show');
-        }
-
-        // 自动调整文本框高度
-        document.getElementById('redirect_uris').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-
-        // 表单提交前的验证
-        document.getElementById('create-app-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            hideError();
-
-            const clientName = document.getElementById('client_name').value.trim();
-            const redirectUris = document.getElementById('redirect_uris').value.trim();
-
-            // 验证应用名称
-            if (!clientName) {
-                showError('请输入应用名称');
-                document.getElementById('client_name').focus();
-                return;
-            }
-
-            if (clientName.length < 2) {
-                showError('应用名称至少需要2个字符');
-                document.getElementById('client_name').focus();
-                return;
-            }
-
-            // 验证回调URL
-            if (!redirectUris) {
-                showError('请输入至少一个回调URL');
-                document.getElementById('redirect_uris').focus();
-                return;
-            }
-
-            const uris = redirectUris.split('\n')
-                .map(uri => uri.trim())
-                .filter(uri => uri.length > 0);
-
-            if (uris.length === 0) {
-                showError('请输入至少一个有效的回调URL');
-                document.getElementById('redirect_uris').focus();
-                return;
-            }
-
-            // 验证URL格式
-            for (let uri of uris) {
-                if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
-                    showError(`回调URL "${uri}" 格式不正确，必须以 http:// 或 https:// 开头`);
-                    document.getElementById('redirect_uris').focus();
-                    return;
-                }
-
-                try {
-                    new URL(uri);
-                } catch (err) {
-                    showError(`回调URL "${uri}" 格式不正确，请检查URL格式`);
-                    document.getElementById('redirect_uris').focus();
-                    return;
-                }
-            }
-
-            // 如果验证通过，提交表单
-            this.submit();
-        });
-
-        // 输入时隐藏错误消息
-        document.getElementById('client_name').addEventListener('input', hideError);
-        document.getElementById('redirect_uris').addEventListener('input', hideError);
-
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 初始调整文本框高度
-            const textarea = document.getElementById('redirect_uris');
+        // Initialize auto-resize for textareas
+        const textarea = document.getElementById('redirect_uris');
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Initial resize
             textarea.style.height = 'auto';
             textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
 
-            // 如果有Flash消息，显示为错误
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        {% if category == 'error' %}
-                            showError('{{ message }}');
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        });
-    </script>
-</body>
-</html>
+        // Check for flash messages
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if category == 'error' %}
+                        showError('{{ message }}');
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    });
+
+    // Enhanced form validation for create client
+    function validateClientForm() {
+        const clientName = document.getElementById('client_name').value.trim();
+        const redirectUris = document.getElementById('redirect_uris').value.trim();
+
+        if (!clientName) {
+            showError('请输入应用名称');
+            document.getElementById('client_name').focus();
+            return false;
+        }
+
+        if (clientName.length < 2) {
+            showError('应用名称至少需要2个字符');
+            document.getElementById('client_name').focus();
+            return false;
+        }
+
+        if (!redirectUris) {
+            showError('请输入至少一个回调URL');
+            document.getElementById('redirect_uris').focus();
+            return false;
+        }
+
+        const uris = redirectUris.split('\n')
+            .map(uri => uri.trim())
+            .filter(uri => uri.length > 0);
+
+        if (uris.length === 0) {
+            showError('请输入至少一个有效的回调URL');
+            document.getElementById('redirect_uris').focus();
+            return false;
+        }
+
+        // Validate URL format
+        for (let uri of uris) {
+            if (!uri.startsWith('http://') && !uri.startsWith('https://')) {
+                showError(`回调URL "${uri}" 格式不正确，必须以 http:// 或 https:// 开头`);
+                document.getElementById('redirect_uris').focus();
+                return false;
+            }
+
+            try {
+                new URL(uri);
+            } catch (err) {
+                showError(`回调URL "${uri}" 格式不正确，请检查URL格式`);
+                document.getElementById('redirect_uris').focus();
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Show error message specifically for create client
+    function showError(message) {
+        const errorElement = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        if (errorElement && errorText) {
+            errorText.textContent = message;
+            errorElement.classList.add('show');
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            // Fallback to toast if error elements don't exist
+            showToast(message, 'error');
+        }
+    }
+
+    // Hide error message
+    function hideError() {
+        const errorElement = document.getElementById('error-message');
+        if (errorElement) {
+            errorElement.classList.remove('show');
+        }
+    }
+
+    // Add input listeners to hide errors
+    document.getElementById('client_name')?.addEventListener('input', hideError);
+    document.getElementById('redirect_uris')?.addEventListener('input', hideError);
+</script>
+{% endblock %}

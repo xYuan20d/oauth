@@ -1,1146 +1,410 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <title>OAuth应用管理</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            background: url('/files/images/background.gif') no-repeat center center fixed;
-            background-size: cover;
-            color: white;
-            padding: 20px;
-        }
-
-        .main-container {
-            display: flex;
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            gap: 20px;
-            min-height: calc(100vh - 40px);
-        }
-
-        .sidebar {
-            width: 280px;
-            background-color: rgba(255, 255, 255, 0.5);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 4px 4px 15px rgba(255, 255, 255, 0.5);
-            display: flex;
-            flex-direction: column;
-            backdrop-filter: blur(5px);
-        }
-
-        .sidebar a {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            color: black;
-            text-decoration: none;
-            font-size: 1.1rem;
-            margin: 8px 0;
-            background-color: transparent;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar a i {
-            margin-right: 12px;
-            width: 20px;
-            text-align: center;
-        }
-
-        .sidebar a:hover {
-            background-color: rgba(240, 240, 240, 0.7);
-            transform: translateX(5px);
-        }
-
-        .content {
-            flex: 1;
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
-            color: #FFD700;
-        }
-
-        .header p {
-            font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        /* Flash Messages */
-        .flash-message {
-            padding: 15px 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            border-left: 4px solid #4285f4;
-            animation: slideIn 0.3s ease;
-        }
-
-        .flash-message.success {
-            border-left-color: #34a853;
-            background-color: rgba(52, 168, 83, 0.2);
-        }
-
-        .flash-message.error {
-            border-left-color: #ea4335;
-            background-color: rgba(234, 67, 53, 0.2);
-        }
-
-        /* Info Card */
-        .info-card {
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 25px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            border-left: 4px solid #4285f4;
-        }
-
-        .info-card h3 {
-            margin-bottom: 15px;
-            color: #4285f4;
-            font-size: 1.3rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .info-card p {
-            margin-bottom: 12px;
-            line-height: 1.5;
-        }
-
-        .info-card ol {
-            padding-left: 20px;
-            margin-bottom: 15px;
-        }
-
-        .info-card li {
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        /* Client Cards */
-        .clients-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .client-card {
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-            transition: all 0.3s ease;
-            border-left: 4px solid #4285f4;
-        }
-
-        .client-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-        }
-
-        .client-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .client-title {
-            flex: 1;
-        }
-
-        .client-title h2 {
-            font-size: 1.5rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .client-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 10px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .btn-edit {
-            background-color: #ffc107;
-            color: #000;
-        }
-
-        .btn-edit:hover {
-            background-color: #e0a800;
-            transform: translateY(-1px);
-        }
-
-        .btn-delete {
-            background-color: #ea4335;
-            color: white;
-        }
-
-        .btn-delete:hover {
-            background-color: #d33426;
-            transform: translateY(-1px);
-        }
-
-        .client-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .detail-group {
-            background-color: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .detail-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .detail-value {
-            font-size: 1rem;
-            color: white;
-            word-break: break-all;
-        }
-
-        .code-block {
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 12px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            margin-top: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            word-break: break-all;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: pre-wrap;
-            line-break: anywhere;
-        }
-
-        .copy-btn {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-top: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .copy-btn:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-1px);
-        }
-
-        /* Data Panel */
-        .data-panel {
-            margin-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            padding-top: 20px;
-        }
-
-        .panel-toggle {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            width: 100%;
-            text-align: left;
-            transition: all 0.3s ease;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .panel-toggle:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .panel-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            margin-top: 10px;
-        }
-
-        .panel-content.expanded {
-            max-height: 600px;
-            padding: 20px;
-        }
-
-        .data-actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .btn-refresh {
-            background-color: #34a853;
-            color: white;
-        }
-
-        .btn-refresh:hover {
-            background-color: #2e9445;
-        }
-
-        .btn-clear {
-            background-color: #fbbc05;
-            color: #000;
-        }
-
-        .btn-clear:hover {
-            background-color: #e6a800;
-        }
-
-        .data-content {
-            max-height: 400px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-
-        .data-table th, .data-table td {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 10px;
-            text-align: left;
-        }
-
-        .data-table th {
-            background-color: rgba(255, 255, 255, 0.1);
-            font-weight: 600;
-        }
-
-        .data-table tr:nth-child(even) {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-
-        .no-data {
-            text-align: center;
-            padding: 40px 20px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        .no-data i {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 12px;
-            margin-top: 20px;
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 20px;
-        }
-
-        .empty-state h3 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        .empty-state p {
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 20px;
-        }
-
-        .btn-primary {
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center; /* 确保文本水平居中 */
-            padding: 10px 20px; /* 调整内边距，确保按钮看起来合适 */
-            background-color: transparent;
-            color: white;
-        }
-
-        .user-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4285f4, #34a853);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
-            margin: 0 auto 20px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.7);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background-color: rgba(0, 0, 0, 0.9);
-            margin: 10% auto;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            animation: modalSlideIn 0.3s ease;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .modal-header h2 {
-            color: #4285f4;
-            font-size: 1.5rem;
-        }
-
-        .close {
-            color: #aaa;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .close:hover {
-            color: white;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.9);
-            font-weight: 500;
-        }
-
-        .form-group input, .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border-radius: 6px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus, .form-group textarea:focus {
-            outline: none;
-            border-color: #4285f4;
-            box-shadow: 0 0 8px rgba(66, 133, 244, 0.5);
-            background-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        .form-hint {
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.7);
-            margin-top: 5px;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 25px;
-        }
-
-        .btn-cancel {
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-
-        .btn-cancel:hover {
-            background-color: rgba(255, 255, 255, 0.3);
-        }
-
-        /* Animations */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes modalSlideIn {
-            from { opacity: 0; transform: translateY(-30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-
-            .main-container {
-                flex-direction: column;
-                min-height: auto;
-            }
-
-            .sidebar {
-                width: 100%;
-                margin-bottom: 20px;
-            }
-
-            .content {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .client-header {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .client-actions {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            .client-details {
-                grid-template-columns: 1fr;
-            }
-
-            .data-actions {
-                flex-direction: column;
-            }
-
-            .modal-content {
-                margin: 5% auto;
-                width: 95%;
-                padding: 20px;
-            }
-        }
-        /* 回调URL容器样式 */
-        .redirect-uris-container {
-            max-height: 200px;
-            max-width: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 6px;
-            padding: 10px;
-            margin-top: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .redirect-uri-item {
-            margin-bottom: 8px;
-            padding: 8px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            border-left: 3px solid #4285f4;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-        }
-
-        .redirect-uri-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .redirect-uri-item code {
-            background: none;
-            padding: 0;
-            color: rgba(255, 255, 255, 0.9);
-        }
-
-        /* 滚动条样式 */
-        .redirect-uris-container::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        .redirect-uris-container::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .redirect-uris-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-        }
-
-        .redirect-uris-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.5);
-        }
-
-        /* 水平滚动提示 */
-        .redirect-uris-container.horizontal-scroll {
-            white-space: nowrap;
-        }
-
-        .redirect-uris-container.horizontal-scroll .redirect-uri-item {
-            display: inline-block;
-            margin-right: 10px;
-            margin-bottom: 0;
-            min-width: max-content;
-        }
-    </style>
-</head>
-<body>
-    <!-- 编辑客户端模态框 -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-edit"></i> 编辑应用</h2>
-                <span class="close" onclick="closeEditModal()">&times;</span>
-            </div>
-            <form id="editClientForm">
-                <div class="form-group">
-                    <label for="client_name"><i class="fas fa-tag"></i> 应用名称</label>
-                    <input type="text" id="client_name" name="client_name" required>
+{% extends "base.html" %}
+
+{% block title %}OAuth应用管理{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Clients specific styles */
+    .info-card {
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        border-left: 4px solid #4285f4;
+    }
+
+    .clients-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .client-card {
+        background-color: rgba(0, 0, 0, 0.6);
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        position: relative;
+        transition: all 0.3s ease;
+        border-left: 4px solid #4285f4;
+    }
+
+    .client-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .client-title {
+        flex: 1;
+    }
+
+    .client-title h2 {
+        font-size: 1.5rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .client-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .client-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .detail-group {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .data-panel {
+        margin-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        padding-top: 20px;
+    }
+
+    .panel-toggle {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1rem;
+        width: 100%;
+        text-align: left;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .panel-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+    .panel-content.expanded {
+        max-height: 600px;
+        padding: 20px;
+    }
+
+    .data-actions {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .data-content {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 10px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+
+    .data-table th, .data-table td {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 10px;
+        text-align: left;
+    }
+
+    .data-table th {
+        background-color: rgba(255, 255, 255, 0.1);
+        font-weight: 600;
+    }
+
+    .data-table tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: rgba(0, 0, 0, 0.4);
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .empty-state p {
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 20px;
+    }
+
+    /* Redirect URIs specific styles */
+    .redirect-uris-container {
+        max-height: 200px;
+        max-width: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .redirect-uri-item {
+        margin-bottom: 8px;
+        padding: 8px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 4px;
+        border-left: 3px solid #4285f4;
+        word-break: break-all;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+    }
+
+    .redirect-uri-item:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.7);
+        backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+        background-color: rgba(0, 0, 0, 0.9);
+        margin: 10% auto;
+        padding: 30px;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .modal-header h2 {
+        color: #4285f4;
+        font-size: 1.5rem;
+    }
+
+    .close {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .close:hover {
+        color: white;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block header %}
+<div class="page-header">
+    <h1><i class="fas fa-code"></i> OAuth应用管理</h1>
+    <p>管理您创建的OAuth应用，查看应用数据和用户授权情况</p>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Info Card -->
+<div class="info-card">
+    <h3><i class="fas fa-info-circle"></i> 如何使用这些应用？</h3>
+    <p>您创建的OAuth应用可以被其他用户使用进行登录授权。其他用户只需要：</p>
+    <ol>
+        <li>在您的应用中点击"使用OAuth登录"</li>
+        <li>跳转到授权页面并同意授权</li>
+        <li>返回您的应用，完成登录</li>
+    </ol>
+    <p><strong>开发者信息：</strong>将 Client ID 和 Client Secret 配置到您的应用中即可。</p>
+</div>
+
+<!-- Clients List -->
+<div class="clients-grid">
+    {% for client in clients %}
+        <div class="client-card">
+            <div class="client-header">
+                <div class="client-title">
+                    <h2><i class="fas fa-address-card"></i> {{ client.client_name }}</h2>
+                    <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
+                        创建时间: {{ client.created_at.strftime('%Y-%m-%d %H:%M:%S') }} |
+                        所有者: {{ client.user.username }}
+                    </p>
                 </div>
-                <div class="form-group">
-                    <label for="redirect_uris"><i class="fas fa-link"></i> 回调URL</label>
-                    <textarea id="redirect_uris" name="redirect_uris" rows="5" required></textarea>
-                    <div class="form-hint">用户授权后会跳转到这些URL，每行一个URL</div>
+                <div class="client-actions">
+                    <button class="btn btn-secondary" onclick="openEditModal('{{ client.id }}', '{{ client.client_name }}', `{{ client.redirect_uris }}`)">
+                        <i class="fas fa-edit"></i> 修改
+                    </button>
+                    <form action="{{ url_for('delete_oauth_client', client_id=client.id) }}" method="POST" style="display: inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('确定要删除这个应用吗？此操作不可撤销！')">
+                            <i class="fas fa-trash-alt"></i> 删除
+                        </button>
+                    </form>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-cancel" onclick="closeEditModal()">取消</button>
-                    <button type="submit" class="btn btn-primary">保存更改</button>
+            </div>
+
+            <div class="client-details">
+                <div class="detail-group">
+                    <div class="detail-label"><i class="fas fa-id-card"></i> 应用ID (Client ID)</div>
+                    <div class="code-block">{{ client.client_id }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('{{ client.client_id }}')">
+                        <i class="fas fa-clipboard"></i> 复制
+                    </button>
                 </div>
-            </form>
-        </div>
-    </div>
 
-    <div class="main-container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-            <div style="text-align: center; margin-bottom: 25px;">
-                <div class="user-avatar">
-                    <i class="fas fa-user"></i>
+                <div class="detail-group">
+                    <div class="detail-label"><i class="fas fa-key"></i> 应用密钥 (Client Secret)</div>
+                    <div class="code-block">{{ client.client_secret }}</div>
+                    <button class="copy-btn" onclick="copyToClipboard('{{ client.client_secret }}')">
+                        <i class="fas fa-clipboard"></i> 复制
+                    </button>
                 </div>
-                <h3 style="color: black; margin: 10px 0;">应用管理</h3>
-                <p style="color: #666; font-size: 0.9rem; margin: 0;">管理您的OAuth客户端</p>
+
+                <div class="detail-group">
+                    <div class="detail-label"><i class="fas fa-link"></i> 回调URL</div>
+                    <div class="redirect-uris-container">
+                        {% for uri in client.redirect_uris_parsed %}
+                            <div class="redirect-uri-item">
+                                <code>{{ uri }}</code>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
 
-            <a href="{{ url_for('dashboard') }}"><i class="fas fa-arrow-left"></i> 返回面板</a>
-            <a href="{{ url_for('create_oauth_client') }}"><i class="fas fa-plus-circle"></i> 创建新应用</a>
-            <a href="{{ url_for('oauth_clients') }}"><i class="fas fa-list"></i> 应用列表</a>
-            <a href="{{ url_for('authorized_apps') }}"><i class="fas fa-shield-alt"></i> 授权管理</a>
+            <!-- Data Panel -->
+            <div class="data-panel">
+                <button class="panel-toggle" onclick="togglePanel('data-panel-{{ client.client_id }}', 'toggle-icon-{{ client.client_id }}')">
+                    <span><i class="fas fa-database"></i> 查看用户数据</span>
+                    <i class="fas fa-chevron-down" id="toggle-icon-{{ client.client_id }}"></i>
+                </button>
 
-            <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.1);">
-                <a href="{{ url_for('logout') }}" style="background-color: rgba(255, 69, 0, 0.8); color: white;">
-                    <i class="fas fa-sign-out-alt"></i> 退出登录
-                </a>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="content">
-            <!-- Header -->
-            <div class="header">
-                <h1><i class="fas fa-code"></i> OAuth应用管理</h1>
-                <p>管理您创建的OAuth应用，查看应用数据和用户授权情况</p>
-            </div>
-
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        {% if message != "登录成功!" %}
-                            <div class="flash-message {{ category }}">
-                                <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
-                                {{ message }}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            <!-- Info Card -->
-            <div class="info-card">
-                <h3><i class="fas fa-info-circle"></i> 如何使用这些应用？</h3>
-                <p>您创建的OAuth应用可以被其他用户使用进行登录授权。其他用户只需要：</p>
-                <ol>
-                    <li>在您的应用中点击"使用OAuth登录"</li>
-                    <li>跳转到授权页面并同意授权</li>
-                    <li>返回您的应用，完成登录</li>
-                </ol>
-                <p><strong>开发者信息：</strong>将 Client ID 和 Client Secret 配置到您的应用中即可。</p>
-            </div>
-
-            <!-- Clients List -->
-            <div class="clients-grid">
-                {% for client in clients %}
-                    <div class="client-card">
-                        <div class="client-header">
-                            <div class="client-title">
-                                <h2><i class="fas fa-address-card"></i> {{ client.client_name }}</h2>
-                                <p style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">
-                                    创建时间: {{ client.created_at.strftime('%Y-%m-%d %H:%M:%S') }} |
-                                    所有者: {{ client.user.username }}
-                                </p>
-                            </div>
-                            <div class="client-actions">
-                                <button class="btn btn-edit" onclick="openEditModal('{{ client.id }}', '{{ client.client_name }}', `{{ client.redirect_uris }}`)">
-                                    <i class="fas fa-edit"></i> 修改
-                                </button>
-                                <form action="{{ url_for('delete_oauth_client', client_id=client.id) }}" method="POST" style="display: inline;">
-                                    <button type="submit" class="btn btn-delete" onclick="return confirm('确定要删除这个应用吗？此操作不可撤销！')">
-                                        <i class="fas fa-trash-alt"></i> 删除
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="client-details">
-                            <div class="detail-group">
-                                <div class="detail-label"><i class="fas fa-id-card"></i> 应用ID (Client ID)</div>
-                                <div class="code-block">{{ client.client_id }}</div>
-                                <button class="copy-btn" onclick="copyToClipboard('{{ client.client_id }}')">
-                                    <i class="fas fa-clipboard"></i> 复制
-                                </button>
-                            </div>
-
-                            <div class="detail-group">
-                                <div class="detail-label"><i class="fas fa-key"></i> 应用密钥 (Client Secret)</div>
-                                <div class="code-block">{{ client.client_secret }}</div>
-                                <button class="copy-btn" onclick="copyToClipboard('{{ client.client_secret }}')">
-                                    <i class="fas fa-clipboard"></i> 复制
-                                </button>
-                            </div>
-
-                            <div class="detail-group">
-                                <div class="detail-label"><i class="fas fa-link"></i> 回调URL</div>
-                                <div class="redirect-uris-container">
-                                    {% for uri in client.redirect_uris_parsed %}
-                                        <div class="redirect-uri-item">
-                                            <code>{{ uri }}</code>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Data Panel -->
-                        <div class="data-panel">
-                            <button class="panel-toggle" onclick="toggleDataPanel('{{ client.client_id }}')">
-                                <span><i class="fas fa-database"></i> 查看用户数据</span>
-                                <i class="fas fa-chevron-down" id="toggle-icon-{{ client.client_id }}"></i>
-                            </button>
-
-                            <div class="panel-content" id="data-panel-{{ client.client_id }}">
-                                <div class="data-actions">
-                                    <button class="btn btn-refresh" onclick="loadClientData('{{ client.client_id }}')">
-                                        <i class="fas fa-sync-alt"></i> 刷新数据
-                                    </button>
-                                    <button class="btn btn-clear" onclick="clearClientData('{{ client.client_id }}')">
-                                        <i class="fas fa-broom"></i> 清除所有数据
-                                    </button>
-                                </div>
-                                <div id="data-content-{{ client.client_id }}" class="data-content">
-                                    <div class="no-data">
-                                        <i class="fas fa-database"></i>
-                                        <p>点击"刷新数据"查看用户存储的数据...</p>
-                                    </div>
-                                </div>
-                            </div>
+                <div class="panel-content" id="data-panel-{{ client.client_id }}">
+                    <div class="data-actions">
+                        <button class="btn btn-success" onclick="loadClientData('{{ client.client_id }}')">
+                            <i class="fas fa-sync-alt"></i> 刷新数据
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearClientData('{{ client.client_id }}')">
+                            <i class="fas fa-broom"></i> 清除所有数据
+                        </button>
+                    </div>
+                    <div id="data-content-{{ client.client_id }}" class="data-content">
+                        <div class="text-center p-3">
+                            <i class="fas fa-database"></i>
+                            <p>点击"刷新数据"查看用户存储的数据...</p>
                         </div>
                     </div>
-                {% else %}
-                    <div class="empty-state">
-                        <i class="fas fa-code"></i>
-                        <h3>您还没有创建任何OAuth应用</h3>
-                        <p>创建一个OAuth应用，让其他用户可以通过您的应用进行登录授权。</p>
-                        <a href="{{ url_for('create_oauth_client') }}" class="btn btn-primary">
-                            <i class="fas fa-plus-circle"
-                               style="font-size: 20px; text-decoration: underline;
-                               text-underline-position: under; padding-bottom: 1px;"> 创建第一个应用</i>
-                        </a>
-                    </div>
-                {% endfor %}
+                </div>
             </div>
         </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-code"></i>
+            <h3>您还没有创建任何OAuth应用</h3>
+            <p>创建一个OAuth应用，让其他用户可以通过您的应用进行登录授权。</p>
+            <a href="{{ url_for('create_oauth_client') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> 创建第一个应用
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Edit Client Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-edit"></i> 编辑应用</h2>
+            <span class="close" onclick="closeEditModal()">&times;</span>
+        </div>
+        <form id="editClientForm">
+            <div class="form-group">
+                <label for="client_name" class="form-label"><i class="fas fa-tag"></i> 应用名称</label>
+                <input type="text" id="client_name" name="client_name" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label for="redirect_uris" class="form-label"><i class="fas fa-link"></i> 回调URL</label>
+                <textarea id="redirect_uris" name="redirect_uris" class="form-textarea" rows="5" required></textarea>
+                <div class="form-hint">用户授权后会跳转到这些URL，每行一个URL</div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button type="submit" class="btn btn-primary">保存更改</button>
+            </div>
+        </form>
     </div>
+</div>
+{% endblock %}
 
-    <script>
-        // 复制到剪贴板功能
-        function copyToClipboard(text) {
-            const tempInput = document.createElement('input');
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            // 显示成功提示
-            showToast('已复制到剪贴板', 'success');
-        }
-
-        // 显示提示消息
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: ${type === 'success' ? 'rgba(52, 168, 83, 0.9)' : 'rgba(66, 133, 244, 0.9)'};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                z-index: 1000;
-                animation: slideIn 0.3s ease;
-            `;
-            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => document.body.removeChild(toast), 300);
-            }, 3000);
-        }
-
-        // 添加CSS动画
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideOut {
-                from { transform: translateX(0); opacity: 1; }
-                to { transform: translateX(100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // 当前编辑的客户端ID
-        let currentEditingClientId = null;
-
-        // 打开编辑模态框
-        function openEditModal(clientId, clientName, redirectUris) {
-            currentEditingClientId = clientId;
-
-            // 填充表单数据
-            document.getElementById('client_name').value = clientName;
-
-            // 解析 JSON 字符串为数组
-            try {
-                let redirectUrisArray = JSON.parse(redirectUris);
-                document.getElementById('redirect_uris').value = redirectUrisArray.join("\n");
-            } catch (e) {
-                // 如果解析失败，直接使用原始值
-                document.getElementById('redirect_uris').value = redirectUris;
-            }
-
-            // 显示模态框
-            document.getElementById('editModal').style.display = 'block';
-        }
-
-        // 关闭编辑模态框
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-            currentEditingClientId = null;
-        }
-
-        // 处理表单提交
-        document.getElementById('editClientForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            if (!currentEditingClientId) {
-                showToast('错误：未选择应用', 'error');
-                return;
-            }
-
-            const formData = new FormData(this);
-
-            fetch(`/oauth/clients/${currentEditingClientId}/edit`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    showToast('应用信息更新成功', 'success');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    showToast('修改失败，请重试', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('修改失败，请重试', 'error');
-            });
-        });
-
-        // 点击模态框外部关闭
-        window.onclick = function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target === modal) {
-                closeEditModal();
-            }
-        }
-
-        // 切换数据面板显示/隐藏
-        function toggleDataPanel(clientId) {
-            const panel = document.getElementById(`data-panel-${clientId}`);
-            const icon = document.getElementById(`toggle-icon-${clientId}`);
-
-            if (panel.classList.contains('expanded')) {
-                panel.classList.remove('expanded');
-                icon.className = 'fas fa-chevron-down';
-            } else {
-                panel.classList.add('expanded');
-                icon.className = 'fas fa-chevron-up';
-                // 自动加载数据
-                loadClientData(clientId);
-            }
-        }
-
-        // 加载客户端存储的数据
-        function loadClientData(clientId) {
-            const contentDiv = document.getElementById(`data-content-${clientId}`);
-            contentDiv.innerHTML = '<div class="no-data"><i class="fas fa-spinner fa-spin"></i><p>加载中...</p></div>';
-
-            fetch(`/api/client_data/${clientId}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('获取数据失败');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.length === 0) {
-                        contentDiv.innerHTML = '<div class="no-data"><i class="fas fa-database"></i><p>该应用暂无用户存储数据</p></div>';
-                    } else {
-                        let html = '<table class="data-table">';
-                        html += '<tr><th>键名</th><th>值</th><th>类型</th><th>更新时间</th><th>操作</th></tr>';
-
-                        data.forEach(item => {
-                            let valueDisplay = item.value;
-                            if (typeof item.value === 'object') {
-                                valueDisplay = JSON.stringify(item.value, null, 2);
-                            }
-
-                            html += `
-                                <tr>
-                                    <td><strong>${item.key}</strong></td>
-                                    <td><pre style="margin:0;max-width:300px;overflow:auto;background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;">${valueDisplay}</pre></td>
-                                    <td>${item.type}</td>
-                                    <td>${new Date(item.updated_at).toLocaleString()}</td>
-                                    <td>
-                                        <button class="btn btn-delete" style="padding:6px 12px;font-size:0.8rem;"
-                                                onclick="deleteDataItem('${clientId}', '${item.key}')">
-                                            <i class="fas fa-trash"></i> 删除
-                                        </button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
-
-                        html += '</table>';
-                        contentDiv.innerHTML = html;
-                    }
-                })
-                .catch(error => {
-                    contentDiv.innerHTML = `<div class="no-data"><i class="fas fa-exclamation-triangle"></i><p>加载失败: ${error.message}</p></div>`;
-                });
-        }
-
-        // 清除客户端所有数据
-        function clearClientData(clientId) {
-            if (!confirm('确定要清除该应用的所有用户数据吗？此操作不可撤销！')) {
-                return;
-            }
-
-            fetch(`/api/client_data/${clientId}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('清除数据失败');
-                }
-                return response.json();
-            })
-            .then(data => {
-                showToast(data.message || '数据清除成功', 'success');
-                loadClientData(clientId); // 刷新显示
-            })
-            .catch(error => {
-                showToast(`清除失败: ${error.message}`, 'error');
-            });
-        }
-
-        // 删除单个数据项
-        function deleteDataItem(clientId, key) {
-            if (!confirm(`确定要删除键 "${key}" 的数据吗？`)) {
-                return;
-            }
-
-            fetch(`/api/client_data/${clientId}?key=${encodeURIComponent(key)}`, {
-                method: 'DELETE'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('删除数据失败');
-                }
-                return response.json();
-            })
-            .then(data => {
-                showToast(data.message || '数据删除成功', 'success');
-                loadClientData(clientId); // 刷新显示
-            })
-            .catch(error => {
-                showToast(`删除失败: ${error.message}`, 'error');
-            });
-        }
-
-        // 切换滚动模式
-        function toggleScrollMode(clientId) {
-            const container = document.getElementById(`redirect-uris-${clientId}`);
-            const button = container.nextElementSibling.querySelector('.toggle-scroll-btn');
-
-            if (container.classList.contains('horizontal-scroll')) {
-                container.classList.remove('horizontal-scroll');
-                button.innerHTML = '<i class="fas fa-arrows-alt-h"></i> 水平滚动';
-            } else {
-                container.classList.add('horizontal-scroll');
-                button.innerHTML = '<i class="fas fa-arrows-alt-v"></i> 垂直滚动';
-            }
-        }
-
-        // 小尺寸复制按钮样式 - 修复：使用不同的变量名
-        const style2 = document.createElement('style');  // 改为 style2
-        style2.textContent = `
-            .copy-btn-small {
-                background: rgba(255, 255, 255, 0.1);
-                border: none;
-                color: white;
-                padding: 2px 6px;
-                border-radius: 3px;
-                cursor: pointer;
-                margin-left: 8px;
-                font-size: 0.7rem;
-                transition: all 0.3s ease;
-            }
-
-            .copy-btn-small:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .toggle-scroll-btn {
-                background: rgba(255, 255, 255, 0.1);
-                border: none;
-                color: white;
-                padding: 4px 8px;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 0.8rem;
-                transition: all 0.3s ease;
-            }
-
-            .toggle-scroll-btn:hover {
-                background: rgba(255, 255, 255, 0.2);
-            }
-
-            .form-hint {
-                font-size: 0.85rem;
-                color: rgba(255, 255, 255, 0.7);
-            }
-        `;
-        document.head.appendChild(style2);  // 使用 style2
-    </script>
-</body>
-</html>
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/clients.js') }}"></script>
+{% endblock %}

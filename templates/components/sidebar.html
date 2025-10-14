@@ -1,0 +1,37 @@
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="user-avatar">
+            {% if user %}
+                {{ user.username[0].upper() }}
+            {% else %}
+                <i class="fas fa-user"></i>
+            {% endif %}
+        </div>
+        <h3>{{ user.username if user else '用户' }}</h3>
+        <p>{{ user.email if user and user.email else '未设置邮箱' }}</p>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}" class="nav-item">
+            <i class="fas fa-home"></i>控制面板
+        </a>
+        <a href="{{ url_for('oauth_clients') }}" class="nav-item">
+            <i class="fas fa-code"></i>我的应用
+        </a>
+        <a href="{{ url_for('create_oauth_client') }}" class="nav-item">
+            <i class="fas fa-plus-circle"></i>创建应用
+        </a>
+        <a href="{{ url_for('authorized_apps') }}" class="nav-item">
+            <i class="fas fa-shield-alt"></i>授权管理
+        </a>
+        <a href="{{ url_for('settings') }}" class="nav-item">
+            <i class="fas fa-cog"></i>账户设置
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="{{ url_for('logout') }}" class="nav-item logout-btn">
+            <i class="fas fa-sign-out-alt"></i>退出登录
+        </a>
+    </div>
+</div>
