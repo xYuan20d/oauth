@@ -77,6 +77,17 @@ class DatabaseCompat:
         return Text
 
     @staticmethod
+    def medium_text_type():
+        if USE_MYSQL:
+            from sqlalchemy.dialects.mysql import MEDIUMTEXT
+
+            return MEDIUMTEXT
+        else:
+            from sqlalchemy import Text
+            return Text
+
+
+    @staticmethod
     def string_type(length):
         """统一的字符串类型"""
         from sqlalchemy import String
@@ -118,7 +129,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(DatabaseCompat.string_type(500), nullable=False)
     email = db.Column(DatabaseCompat.string_type(150), unique=True, nullable=False)
     email_verified = db.Column(DatabaseCompat.boolean_type(), default=False)
-    avatar = db.Column(DatabaseCompat.text_type())  # base64头像数据
+    avatar = db.Column(DatabaseCompat.medium_text_type())  # base64头像数据
 
     # OAuth相关
     oauth_clients = db.relationship('OAuthClient', backref='user', lazy=True)
@@ -1457,6 +1468,7 @@ def upload_avatar():
         })
 
     except Exception as e:
+        print(e)
         db.session.rollback()
         return jsonify({'success': False, 'error': f'上传失败: {str(e)}'})
 
