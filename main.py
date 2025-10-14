@@ -621,7 +621,7 @@ def oauth_token():
     return jsonify(error='unsupported_grant_type', error_description='不支持的授权类型'), 400
 
 
-# 用户信息端点
+# OAuth用户信息端点
 @app.route('/oauth/userinfo')
 def oauth_userinfo():
     # 从Authorization头获取访问令牌
@@ -642,16 +642,13 @@ def oauth_userinfo():
     # 获取用户信息
     user = User.query.get(token.user_id)
 
-    # 返回用户信息（根据scope决定返回哪些字段）
+    # 返回用户信息（移除头像数据）
     user_info = {
         'sub': str(user.id),
         'username': user.username,
-        'email': user.email
+        'email': user.email,
+        'has_avatar': user.avatar is not None  # 只返回是否有头像的标识
     }
-
-    # 如果有头像，添加到用户信息中
-    if user.avatar:
-        user_info['avatar'] = user.avatar
 
     return jsonify(user_info)
 
@@ -1431,9 +1428,9 @@ def upload_avatar():
         if not avatar_data.startswith('data:image/'):
             return jsonify({'success': False, 'error': '无效的图片格式'})
 
-        # 检查文件大小（4MB限制）
-        if len(avatar_data) > 4 * 1024 * 1024:  # 4MB
-            return jsonify({'success': False, 'error': '头像文件大小不能超过4MB'})
+        # 更严格的大小限制：200KB
+        if len(avatar_data) > 200 * 1024:
+            return jsonify({'success': False, 'error': '头像文件大小不能超过200KB'})
 
         # 更新用户头像
         current_user.avatar = avatar_data
@@ -1442,13 +1439,12 @@ def upload_avatar():
         return jsonify({
             'success': True,
             'message': '头像更新成功',
-            'avatar_url': avatar_data  # 返回完整的data URL
+            'has_avatar': True  # 只返回标识
         })
 
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': f'上传失败: {str(e)}'})
-
 
 @app.route('/api/remove_avatar', methods=['POST'])
 @login_required
@@ -1461,6 +1457,35 @@ def remove_avatar():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': f'移除失败: {str(e)}'})
+
+
+# 获取用户头像的路由
+@app.route('/api/user/avatar')
+@login_required
+def get_user_avatar():
+    """获取当前登录用户的头像"""
+    if not current_user.avatar:
+        return jsonify({'error': '用户没有设置头像'}), 404
+
+    # 返回头像数据
+    return jsonify({
+        'avatar': current_user.avatar
+    })
+
+
+# 获取指定用户头像的路由（公开或受保护的）
+@app.route('/api/user/<int:user_id>/avatar')
+def get_specific_user_avatar(user_id):
+    """获取指定用户的头像"""
+    user = User.query.get_or_404(user_id)
+
+    if not user.avatar:
+        return jsonify({'error': '用户没有设置头像'}), 404
+
+    # 返回头像数据
+    return jsonify({
+        'avatar': user.avatar
+    })
 
 
 if __name__ == '__main__':
