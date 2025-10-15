@@ -25,8 +25,11 @@ load_dotenv()
 
 # 初始化Flask应用
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "files"))
+# CORS配置
 if os.getenv('USE_CORS', 'False').lower() in ('true', '1', 't'):
     CORS(app)
+
+# SECRET_KEY配置
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", secrets.token_hex(16))
 app.json.ensure_ascii = False
 
@@ -88,7 +91,6 @@ class DatabaseCompat:
             return MEDIUMTEXT
         else:
             return Text
-
 
     @staticmethod
     def string_type(length):
@@ -217,7 +219,6 @@ def token_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
-
 
 def token_required_or_optional(optional=False):
     """可选的OAuth令牌认证装饰器"""
@@ -446,7 +447,6 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html')
-
 
 # 登录路由
 @app.route('/login', methods=['GET', 'POST'])
@@ -1117,7 +1117,6 @@ def stats_active_sessions():
 
     return jsonify({'count': user_count})
 
-
 @app.route('/api/stats/monthly_authorizations')
 @login_required
 def stats_monthly_authorizations():
@@ -1140,7 +1139,6 @@ def stats_monthly_authorizations():
 
     return jsonify({'count': user_count})
 
-
 @app.route('/api/stats/total_authorizations')
 def stats_total_authorizations():
     """获取总授权次数（不去重）"""
@@ -1156,7 +1154,6 @@ def stats_total_authorizations():
     ).count()
 
     return jsonify({'count': total_count})
-
 
 @app.route('/api/stats/total_apps')
 def stats_total_apps():
@@ -1175,7 +1172,6 @@ def stats_total_apps():
             'message': str(e)
         }), 500
 
-
 @app.route('/api/stats/total_users')
 def stats_total_users():
     """获取所有注册用户的总数"""
@@ -1192,7 +1188,6 @@ def stats_total_users():
             'error': '获取用户总数失败',
             'message': str(e)
         }), 500
-
 
 # 获取用户授权的所有应用
 @app.route('/api/authorized_apps', methods=['GET'])
@@ -1260,7 +1255,6 @@ def get_authorized_apps():
             'message': str(e)
         }), 500
 
-
 # 取消应用授权
 @app.route('/api/authorized_apps/<client_id>', methods=['DELETE'])
 @login_required
@@ -1305,7 +1299,6 @@ def revoke_authorization(client_id):
             'error': '取消授权失败',
             'message': str(e)
         }), 500
-
 
 # 批量取消授权
 @app.route('/api/authorized_apps/batch_revoke', methods=['POST'])
@@ -1383,7 +1376,6 @@ def batch_revoke_authorizations():
             'error': '批量取消授权失败',
             'message': str(e)
         }), 500
-
 
 # 获取授权详情
 @app.route('/api/authorized_apps/<client_id>/details', methods=['GET'])
@@ -1468,14 +1460,12 @@ def get_authorization_details(client_id):
             'message': str(e)
         }), 500
 
-
 # 授权管理页面
 @app.route('/authorized_apps')
 @login_required
 def authorized_apps():
     """授权管理页面"""
     return render_template('authorized_apps.html', user=current_user)
-
 
 @app.route('/api/upload_avatar', methods=['POST'])
 @login_required
@@ -1534,7 +1524,6 @@ def remove_avatar():
         db.session.rollback()
         return jsonify({'success': False, 'error': f'移除失败: {str(e)}'})
 
-
 # 获取用户头像的路由
 @app.route('/api/user/avatar')
 @login_required
@@ -1546,7 +1535,6 @@ def get_user_avatar():
     return jsonify({
         'avatar': current_user.avatar
     })
-
 
 # 新增OAuth专用端点（给第三方应用用）
 @app.route('/oauth/avatar')
@@ -1561,7 +1549,6 @@ def oauth_user_avatar():
     return jsonify({
         'avatar': user.avatar
     })
-
 
 @app.route('/oauth/user/<int:user_id>/avatar')
 @token_required
