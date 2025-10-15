@@ -55,7 +55,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_COOKIE_NAME'] = 'main_session'
 app.config['SESSION_COOKIE_PATH'] = '/'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = False  # 开发环境设为False，生产环境应为True
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() in ('false', '0', 'f')
 
 app.jinja_env.globals.update(requests=requests)
 
@@ -458,7 +458,9 @@ def login():
         # 查找用户
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
-            login_user(user)
+            # 启用记住我功能，保持登录状态
+            remember = request.form.get('remember', False)
+            login_user(user, remember=bool(remember))
             flash('登录成功!', 'success')
 
             # 如果是从OAuth授权流程跳转过来的，重定向到授权页面
@@ -468,6 +470,7 @@ def login():
             return redirect(url_for('dashboard'))
         flash('用户名或密码错误!', 'error')
         return redirect(url_for('login'))
+
     return render_template('login.html')
 
 

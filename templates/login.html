@@ -146,6 +146,78 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        .remember-me {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+        }
+
+        .remember-me:hover {
+            transform: translateX(5px);
+        }
+
+        .remember-checkbox {
+            display: none;
+        }
+
+        .remember-label {
+            position: relative;
+            padding-left: 35px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .remember-label::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .remember-label::after {
+            content: '✓';
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%) scale(0);
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .remember-checkbox:checked + .remember-label::before {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .remember-checkbox:checked + .remember-label::after {
+            transform: translateY(-50%) scale(1);
+        }
+
+        .remember-icon {
+            margin-right: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+
+        .remember-checkbox:checked + .remember-label .remember-icon {
+            color: #4CAF50;
+        }
+
         .btn-login {
             width: 100%;
             padding: 15px;
@@ -240,6 +312,10 @@
             .logo {
                 font-size: 2.5rem;
             }
+
+            .remember-label {
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
@@ -284,6 +360,15 @@
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
+                </div>
+
+                <!-- 记住我复选框 -->
+                <div class="remember-me">
+                    <input type="checkbox" id="remember" name="remember" class="remember-checkbox" value="true">
+                    <label for="remember" class="remember-label">
+                        <i class="fas fa-check-circle remember-icon"></i>
+                        保持登录状态（30天内免登录）
+                    </label>
                 </div>
 
                 <button type="submit" class="btn-login">
@@ -358,6 +443,17 @@
             });
         });
 
+        // 记住我复选框动画效果
+        const rememberCheckbox = document.getElementById('remember');
+        const rememberLabel = document.querySelector('.remember-label');
+
+        rememberLabel.addEventListener('click', function(e) {
+            // 防止重复触发
+            if (e.target !== rememberCheckbox) {
+                rememberCheckbox.checked = !rememberCheckbox.checked;
+            }
+        });
+
         // 页面加载完成后创建漂浮元素
         document.addEventListener('DOMContentLoaded', createFloatingElements);
 
@@ -374,6 +470,23 @@
         // 自动聚焦用户名输入框
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('username').focus();
+
+            // 检查本地存储中是否有记住的用户名
+            const rememberedUsername = localStorage.getItem('rememberedUsername');
+            if (rememberedUsername) {
+                document.getElementById('username').value = rememberedUsername;
+                document.getElementById('remember').checked = true;
+            }
+        });
+
+        // 表单提交时，如果勾选了记住我，保存用户名到本地存储
+        document.querySelector('form').addEventListener('submit', function() {
+            if (document.getElementById('remember').checked) {
+                const username = document.getElementById('username').value;
+                localStorage.setItem('rememberedUsername', username);
+            } else {
+                localStorage.removeItem('rememberedUsername');
+            }
         });
     </script>
 </body>
