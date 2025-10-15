@@ -27,6 +27,7 @@ load_dotenv()
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "files"))
 CORS(app)
 app.config['SECRET_KEY'] = 'your_secret_key'
+app.json.ensure_ascii = False
 
 # 数据库配置
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
