@@ -49,36 +49,64 @@
 document.addEventListener('DOMContentLoaded', function() {
     const sidebarAvatarImg = document.getElementById('sidebar-avatar-img');
 
-    // 先检查 localStorage 是否有缓存的头像
-    const cachedAvatar = localStorage.getItem('userAvatar');
-    if (false) {  // 禁用缓存
-        // 如果缓存中有头像，直接使用缓存的头像
-        sidebarAvatarImg.src = cachedAvatar;
-    } else if (sidebarAvatarImg) {
-        // 如果没有缓存，从服务器请求头像
-        fetch('/api/user/avatar')
-            .then(response => response.json())
-            .then(data => {
-                if (data.avatar) {
-                    const avatarUrl = 'data:image/png;base64,' + data.avatar;
-                    // 更新头像的src为返回的base64数据
-                    sidebarAvatarImg.src = avatarUrl;
-                    // 将头像保存到 localStorage 中
-                    localStorage.setItem('userAvatar', avatarUrl);
-                }
-            })
-            .catch(error => {
-                console.error('获取头像失败:', error);
-            });
-    }
+    // 打开或创建 IndexedDB 数据库
+    const request = indexedDB.open('userProfileDB', 1);
+
+    request.onupgradeneeded = function(event) {
+        const db = event.target.result;
+        // 创建头像存储对象
+        if (!db.objectStoreNames.contains('avatars')) {
+            db.createObjectStore('avatars', { keyPath: 'id' });
+        }
+    };
+
+    request.onsuccess = function(event) {
+        const db = event.target.result;
+        const transaction = db.transaction(['avatars'], 'readonly');
+        const objectStore = transaction.objectStore('avatars');
+
+        // 尝试从 IndexedDB 中获取缓存的头像
+        const avatarRequest = objectStore.get(1);  // 假设用户头像的 key 是 1
+
+        avatarRequest.onsuccess = function() {
+            const cachedAvatar = avatarRequest.result ? avatarRequest.result.data : null;
+            if (cachedAvatar) {
+                // 如果头像缓存存在，则直接使用缓存的头像
+                sidebarAvatarImg.src = cachedAvatar;
+            } else {
+                // 如果没有缓存，从服务器请求头像
+                fetch('/api/user/avatar')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.avatar) {
+                            const avatarUrl = 'data:image/png;base64,' + data.avatar;
+                            // 更新头像的src为返回的base64数据
+                            sidebarAvatarImg.src = avatarUrl;
+
+                            // 将头像存入 IndexedDB
+                            const avatarTransaction = db.transaction(['avatars'], 'readwrite');
+                            const avatarStore = avatarTransaction.objectStore('avatars');
+                            avatarStore.put({ id: 1, data: avatarUrl });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('获取头像失败:', error);
+                    });
+            }
+        };
+    };
 
     // 监听自定义事件，当头像更新时刷新侧边栏显示
     document.addEventListener('avatarUpdated', function(event) {
         const sidebarAvatar = document.getElementById('sidebar-avatar');
         if (sidebarAvatar && event.detail && event.detail.avatarUrl) {
             sidebarAvatar.innerHTML = `<img src="${event.detail.avatarUrl}" alt="用户头像" class="sidebar-avatar-img">`;
-            // 更新 localStorage 中的头像
-            localStorage.setItem('userAvatar', event.detail.avatarUrl);
+
+            // 存储新的头像到 IndexedDB
+            const db = request.result;
+            const transaction = db.transaction(['avatars'], 'readwrite');
+            const objectStore = transaction.objectStore('avatars');
+            objectStore.put({ id: 1, data: event.detail.avatarUrl });
         }
     });
 
@@ -89,8 +117,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (sidebarAvatar && username) {
             sidebarAvatar.innerHTML = `<div class="sidebar-avatar-text">${username[0].toUpperCase()}</div>`;
         }
-        // 清除缓存中的头像
-        localStorage.removeItem('userAvatar');
+
+        // 清除 IndexedDB 中的头像
+        const db = request.result;
+        const transaction = db.transaction(['avatars'], 'readwrite');
+        const objectStore = transaction.objectStore('avatars');
+        objectStore.delete(1);  // 删除头像记录
     });
 });
+
 </script>
