@@ -212,7 +212,7 @@ function showDataManagementModal(clientId, appName, data) {
         `}
 
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
-            <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
+            <button class="btn btn-secondary" onclick="closeModal()" style="background: #2ca0ff">关闭</button>
         </div>
     `;
 
