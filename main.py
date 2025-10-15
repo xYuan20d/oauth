@@ -27,7 +27,7 @@ load_dotenv()
 app = Flask(__name__, static_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), "files"))
 if os.getenv('USE_CORS', 'False').lower() in ('true', '1', 't'):
     CORS(app)
-app.config['SECRET_KEY'] = 'your_secret_key'
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", secrets.token_hex(16))
 app.json.ensure_ascii = False
 
 # 数据库配置
