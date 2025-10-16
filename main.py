@@ -350,6 +350,20 @@ class ConfigManager:
         return result
 
 
+    @staticmethod
+    def delete_all():
+        """删除所有配置"""
+        try:
+            # 删除所有配置
+            num_deleted = db.session.query(SiteConfig).delete()
+            db.session.commit()
+            return num_deleted  # 返回删除的记录数
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error while deleting all configurations: {e}")
+            return 0  # 如果出错，返回 0
+
+
 # 创建全局配置管理器实例
 config_manager = ConfigManager()
 
