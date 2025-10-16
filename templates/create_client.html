@@ -255,36 +255,13 @@
             try {
                 new URL(uri);
             } catch (err) {
-                showError(`回调URL "${uri}" 格式不正确，请检查URL格式`);
+                showError(`回调URL "${uri}" 格式不正确，请检查URI格式`);
                 document.getElementById('redirect_uris').focus();
                 return false;
             }
         }
 
         return true;
-    }
-
-    // Show error message specifically for create client
-    function showError(message) {
-        const errorElement = document.getElementById('error-message');
-        const errorText = document.getElementById('error-text');
-
-        if (errorElement && errorText) {
-            errorText.textContent = message;
-            errorElement.classList.add('show');
-            errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-            // Fallback to toast if error elements don't exist
-            showToast(message, 'error');
-        }
-    }
-
-    // Hide error message
-    function hideError() {
-        const errorElement = document.getElementById('error-message');
-        if (errorElement) {
-            errorElement.classList.remove('show');
-        }
     }
 
     // Add input listeners to hide errors
