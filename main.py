@@ -184,6 +184,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() in ('false', '0', 'f')
 
 app.jinja_env.globals.update(requests=requests)
+app.jinja_env.globals.update(year=datetime.now().year)
 
 # 初始化SQLAlchemy
 db = SQLAlchemy(app)
