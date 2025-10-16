@@ -52,7 +52,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-
 # 在应用启动时创建默认管理员账户
 def create_admin_user():
     """创建或更新默认管理员账户"""
@@ -79,6 +78,81 @@ def create_admin_user():
     except Exception as e:
         db.session.rollback()
         print(f"创建管理员账户时出错: {str(e)}")
+
+def create_default_configs():
+    """创建默认配置"""
+    default_configs = [
+        {
+            'key': 'site_name',
+            'value': 'OAuth 2.0 认证平台',
+            'value_type': 'string',
+            'description': '网站名称',
+            'category': 'site',
+            'is_public': True
+        },
+        {
+            'key': 'site_description',
+            'value': '一个功能完整的OAuth2.0认证服务平台',
+            'value_type': 'string',
+            'description': '网站描述',
+            'category': 'site',
+            'is_public': True
+        },
+        {
+            'key': 'site_keywords',
+            'value': 'OAuth2.0,认证,授权,SSO',
+            'value_type': 'string',
+            'description': '网站关键词',
+            'category': 'site',
+            'is_public': True
+        },
+        {
+            'key': 'allow_registration',
+            'value': 'true',
+            'value_type': 'boolean',
+            'description': '是否允许用户注册',
+            'category': 'security',
+            'is_public': False
+        },
+        {
+            'key': 'require_email_verification',
+            'value': 'true',
+            'value_type': 'boolean',
+            'description': '注册是否需要邮箱验证',
+            'category': 'security',
+            'is_public': False
+        },
+        {
+            'key': 'max_clients_per_user',
+            'value': '10',
+            'value_type': 'number',
+            'description': '每个用户最多创建的应用数量',
+            'category': 'limits',
+            'is_public': False
+        },
+        {
+            'key': 'token_expire_days',
+            'value': '30',
+            'value_type': 'number',
+            'description': '访问令牌过期天数',
+            'category': 'security',
+            'is_public': False
+        }
+    ]
+
+    for config_data in default_configs:
+        existing = SiteConfig.query.filter_by(key=config_data['key']).first()
+        if not existing:
+            config = SiteConfig(**config_data)
+            db.session.add(config)
+
+    try:
+        db.session.commit()
+        print("默认配置已初始化")
+    except Exception as e:
+        db.session.rollback()
+        print(f"初始化默认配置时出错: {str(e)}")
+
 
 # 数据库配置
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
@@ -160,6 +234,124 @@ class DatabaseCompat:
     def boolean_type():
         """统一的布尔类型"""
         return Boolean
+
+
+# 网站配置模型
+class SiteConfig(db.Model):
+    id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
+    key = db.Column(DatabaseCompat.string_type(100), unique=True, nullable=False, index=True)
+    value = db.Column(DatabaseCompat.text_type())  # 存储JSON格式的值
+    value_type = db.Column(DatabaseCompat.string_type(20), default='string')  # string, number, boolean, json, text
+    description = db.Column(DatabaseCompat.text_type())  # 配置项描述
+    category = db.Column(DatabaseCompat.string_type(50), default='general')  # 配置分类
+    is_public = db.Column(DatabaseCompat.boolean_type(), default=False)  # 是否公开（前端可访问）
+    created_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow)
+    updated_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def get_value(self):
+        """根据类型返回解析后的值"""
+        if not self.value:
+            return None
+
+        try:
+            if self.value_type == 'number':
+                return float(self.value) if '.' in self.value else int(self.value)
+            elif self.value_type == 'boolean':
+                return self.value.lower() in ('true', '1', 'yes')
+            elif self.value_type == 'json':
+                return json.loads(self.value)
+            elif self.value_type == 'text':
+                return self.value
+            else:  # string
+                return self.value
+        except (ValueError, json.JSONDecodeError):
+            return self.value  # 解析失败返回原始值
+
+    def set_value(self, new_value):
+        """根据类型设置值"""
+        if isinstance(new_value, (int, float)):
+            self.value = str(new_value)
+            self.value_type = 'number'
+        elif isinstance(new_value, bool):
+            self.value = 'true' if new_value else 'false'
+            self.value_type = 'boolean'
+        elif isinstance(new_value, (dict, list)):
+            self.value = json.dumps(new_value, ensure_ascii=False)
+            self.value_type = 'json'
+        else:
+            self.value = str(new_value)
+            self.value_type = 'string'
+
+
+class ConfigManager:
+    """配置管理工具类"""
+
+    @staticmethod
+    def get(key, default=None):
+        """获取配置值"""
+        config = SiteConfig.query.filter_by(key=key).first()
+        if config:
+            return config.get_value()
+        return default
+
+    @staticmethod
+    def set(key, value, description=None, category='general', is_public=False):
+        """设置配置值"""
+        config = SiteConfig.query.filter_by(key=key).first()
+
+        if config:
+            config.set_value(value)
+            config.description = description or config.description
+            config.category = category
+            config.is_public = is_public
+            config.updated_at = datetime.utcnow()
+        else:
+            config = SiteConfig(
+                key=key,
+                description=description,
+                category=category,
+                is_public=is_public
+            )
+            config.set_value(value)
+            db.session.add(config)
+
+        db.session.commit()
+        return config
+
+    @staticmethod
+    def delete(key):
+        """删除配置"""
+        config = SiteConfig.query.filter_by(key=key).first()
+        if config:
+            db.session.delete(config)
+            db.session.commit()
+            return True
+        return False
+
+    @staticmethod
+    def get_all(category=None, is_public=None):
+        """获取所有配置"""
+        query = SiteConfig.query
+
+        if category:
+            query = query.filter_by(category=category)
+        if is_public is not None:
+            query = query.filter_by(is_public=is_public)
+
+        return query.order_by(SiteConfig.category, SiteConfig.key).all()
+
+    @staticmethod
+    def get_public_configs():
+        """获取所有公开配置（用于前端）"""
+        configs = SiteConfig.query.filter_by(is_public=True).all()
+        result = {}
+        for config in configs:
+            result[config.key] = config.get_value()
+        return result
+
+
+# 创建全局配置管理器实例
+config_manager = ConfigManager()
 
 
 # 邮箱验证码模型
@@ -249,6 +441,11 @@ class AccessToken(db.Model):
 with app.app_context():
     create_admin_user()
     db.create_all()
+    create_default_configs()
+    # 获取网站名称
+    SITE_NAME = config_manager.get("site_name", "")
+    app.jinja_env.globals.update(SITE_NAME=SITE_NAME)
+
 
 def token_required(f):
     """OAuth令牌认证装饰器"""
@@ -2121,6 +2318,164 @@ def admin_delete_client(client_id):
         return jsonify({
             'success': False,
             'error': f'删除应用失败: {str(e)}'
+        }), 500
+
+# 配置管理API
+@app.route('/api/admin/configs')
+@admin_required
+def admin_get_configs():
+    """获取所有配置"""
+    try:
+        category = request.args.get('category')
+        configs = config_manager.get_all(category=category)
+
+        config_list = []
+        for config in configs:
+            config_list.append({
+                'id': config.id,
+                'key': config.key,
+                'value': config.get_value(),
+                'raw_value': config.value,
+                'value_type': config.value_type,
+                'description': config.description,
+                'category': config.category,
+                'is_public': config.is_public,
+                'created_at': config.created_at.isoformat(),
+                'updated_at': config.updated_at.isoformat()
+            })
+
+        return jsonify({
+            'configs': config_list,
+            'categories': db.session.query(SiteConfig.category).distinct().all()
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取配置失败',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/configs', methods=['POST'])
+@admin_required
+def admin_create_config():
+    """创建新配置"""
+    try:
+        data = request.get_json()
+        if not data or 'key' not in data:
+            return jsonify({'error': '缺少必要参数'}), 400
+
+        # 检查key是否已存在
+        existing = SiteConfig.query.filter_by(key=data['key']).first()
+        if existing:
+            return jsonify({'error': '配置键已存在'}), 400
+
+        config = config_manager.set(
+            key=data['key'],
+            value=data.get('value', ''),
+            description=data.get('description', ''),
+            category=data.get('category', 'general'),
+            is_public=data.get('is_public', False)
+        )
+
+        return jsonify({
+            'success': True,
+            'message': '配置创建成功',
+            'config': {
+                'id': config.id,
+                'key': config.key,
+                'value': config.get_value(),
+                'value_type': config.value_type,
+                'description': config.description,
+                'category': config.category,
+                'is_public': config.is_public
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': '创建配置失败',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/configs/<key>', methods=['PUT'])
+@admin_required
+def admin_update_config(key):
+    """更新配置"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': '无效的请求数据'}), 400
+
+        config = SiteConfig.query.filter_by(key=key).first()
+        if not config:
+            return jsonify({'error': '配置不存在'}), 404
+
+        # 更新配置
+        if 'value' in data:
+            config.set_value(data['value'])
+        if 'description' in data:
+            config.description = data['description']
+        if 'category' in data:
+            config.category = data['category']
+        if 'is_public' in data:
+            config.is_public = data['is_public']
+
+        config.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '配置更新成功',
+            'config': {
+                'id': config.id,
+                'key': config.key,
+                'value': config.get_value(),
+                'value_type': config.value_type,
+                'description': config.description,
+                'category': config.category,
+                'is_public': config.is_public
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': '更新配置失败',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/configs/<key>', methods=['DELETE'])
+@admin_required
+def admin_delete_config(key):
+    """删除配置"""
+    try:
+        if config_manager.delete(key):
+            return jsonify({
+                'success': True,
+                'message': '配置删除成功'
+            })
+        else:
+            return jsonify({'error': '配置不存在'}), 404
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': '删除配置失败',
+            'message': str(e)
+        }), 500
+
+# 公开配置端点（前端可访问）
+@app.route('/api/configs/public')
+def get_public_configs():
+    """获取公开配置"""
+    try:
+        configs = config_manager.get_public_configs()
+        return jsonify(configs)
+    except Exception as e:
+        return jsonify({
+            'error': '获取配置失败',
+            'message': str(e)
         }), 500
 
 
