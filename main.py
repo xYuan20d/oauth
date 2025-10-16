@@ -83,6 +83,8 @@ def create_admin_user():
 # 数据库配置
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
 
+SQLITE_DB_NAME = os.getenv('SQLITE_DB_NAME', 'users.db')
+
 if USE_MYSQL:
     # MySQL配置
     MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
@@ -96,8 +98,8 @@ if USE_MYSQL:
     print(f"使用MySQL数据库: {MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}")
 else:
     # SQLite配置
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-    print("使用SQLite数据库: users.db")
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{SQLITE_DB_NAME}'
+    print(f"使用SQLite数据库: {SQLITE_DB_NAME}")
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
