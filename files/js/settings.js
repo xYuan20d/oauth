@@ -111,7 +111,7 @@ async function saveProfileSettings(form) {
     }
 }
 
-// Change password
+// Change password - 修改为实际调用后端API
 async function changePassword(form) {
     const formData = new FormData(form);
     const alertElement = document.getElementById('password-alert');
@@ -120,7 +120,7 @@ async function changePassword(form) {
     const newPassword = formData.get('new_password');
     const confirmPassword = formData.get('confirm_password');
 
-    // Validation
+    // 前端验证
     if (newPassword !== confirmPassword) {
         showAlert(alertElement, '新密码与确认密码不匹配！', 'error');
         return;
@@ -137,17 +137,33 @@ async function changePassword(form) {
     }
 
     try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // 调用后端API修改密码
+        const response = await fetch('/api/change_password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_password: newPassword,
+                confirm_password: confirmPassword
+            })
+        });
 
-        showAlert(alertElement, '密码已成功修改！', 'success');
-        form.reset();
-        document.getElementById('password-strength').className = 'password-strength';
-        document.getElementById('password-strength').style.width = '0%';
-        document.getElementById('password-match-hint').textContent = '';
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert(alertElement, '密码已成功修改！', 'success');
+            form.reset();
+            document.getElementById('password-strength').className = 'password-strength';
+            document.getElementById('password-strength').style.width = '0%';
+            document.getElementById('password-match-hint').textContent = '';
+        } else {
+            showAlert(alertElement, result.error || '修改失败，请重试', 'error');
+        }
     } catch (error) {
         console.error('修改密码失败:', error);
-        showAlert(alertElement, '修改失败，请重试', 'error');
+        showAlert(alertElement, '网络错误，请重试', 'error');
     }
 }
 

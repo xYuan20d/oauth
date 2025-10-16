@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 import smtplib
 from email.mime.text import MIMEText
@@ -136,6 +137,14 @@ class User(UserMixin, db.Model):
     oauth_clients = db.relationship('OAuthClient', backref='user', lazy=True)
     authorization_codes = db.relationship('AuthorizationCode', backref='user', lazy=True)
     access_tokens = db.relationship('AccessToken', backref='user', lazy=True)
+
+    def verify_password(self, password):
+        """验证密码"""
+        return check_password_hash(self.password_hash, password)
+
+    def change_password(self, new_password):
+        """修改密码"""
+        self.password_hash = generate_password_hash(new_password)
 
 
 class ClientUserData(db.Model):
@@ -1563,6 +1572,52 @@ def get_specific_user_avatar(user_id):
     return jsonify({
         'avatar': user.avatar
     })
+
+# 添加修改密码的路由
+@app.route('/api/change_password', methods=['POST'])
+@login_required
+def change_password():
+    """修改用户密码"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': '无效的请求数据'})
+
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
+
+        # 验证必填字段
+        if not all([current_password, new_password, confirm_password]):
+            return jsonify({'success': False, 'error': '所有字段都是必填的'})
+
+        # 验证当前密码
+        if not current_user.verify_password(current_password):
+            return jsonify({'success': False, 'error': '当前密码错误'})
+
+        # 验证新密码和确认密码是否一致
+        if new_password != confirm_password:
+            return jsonify({'success': False, 'error': '新密码与确认密码不匹配'})
+
+        # 验证新密码强度
+        if len(new_password) < 8:
+            return jsonify({'success': False, 'error': '密码长度至少8位'})
+
+        if not re.match(r'^(?=.*[a-zA-Z])(?=.*\d)', new_password):
+            return jsonify({'success': False, 'error': '密码必须包含字母和数字'})
+
+        # 更新密码
+        current_user.change_password(new_password)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '密码修改成功'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'修改密码失败: {str(e)}'})
 
 
 if __name__ == '__main__':
