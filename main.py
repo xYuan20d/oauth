@@ -1043,9 +1043,10 @@ def delete_all_client_data(client_id):
 
 
 # 删除特定数据项的API端点
-@app.route('/api/client_data/<client_id>', methods=['DELETE'])
+@app.route('/api/client_data/<client_id>/item', methods=['DELETE'])
 @login_required
 def delete_client_data_item(client_id):
+    """删除特定数据项"""
     # 验证客户端是否属于当前用户
     client = OAuthClient.query.filter_by(client_id=client_id, user_id=current_user.id).first()
     if not client:
@@ -1057,14 +1058,21 @@ def delete_client_data_item(client_id):
         return jsonify(error='缺少键名参数'), 400
 
     # 删除特定数据项
-    ClientUserData.query.filter_by(
+    deleted_count = ClientUserData.query.filter_by(
         client_id=client_id,
         user_id=current_user.id,
         data_key=key
     ).delete()
+
     db.session.commit()
 
-    return jsonify({'message': '数据删除成功'})
+    if deleted_count > 0:
+        return jsonify({
+            'message': f'数据项 "{key}" 删除成功',
+            'deleted_count': deleted_count
+        })
+    else:
+        return jsonify(error='数据项不存在'), 404
 
 
 # 编辑OAuth客户端
