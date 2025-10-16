@@ -2359,9 +2359,12 @@ def admin_get_configs():
                 'updated_at': config.updated_at.isoformat()
             })
 
+        # 获取所有独特的类别（categories）
+        categories = [category[0] for category in db.session.query(SiteConfig.category).distinct().all()]
+
         return jsonify({
             'configs': config_list,
-            'categories': db.session.query(SiteConfig.category).distinct().all()
+            'categories': categories
         })
 
     except Exception as e:
