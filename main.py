@@ -541,7 +541,7 @@ def send_verification_email(email, verification_code):
         subject = 'OAuth认证平台 - 邮箱验证码'
         content = requests.get(request.url_root + url_for("serve_file", filename='html/mail.html')).text\
             .replace("_e_m_a_i_l_", email).replace("_c_o_d_e_", verification_code)\
-            .replace("_y_e_a_r_", str(datetime.now().year))
+            .replace("_y_e_a_r_", str(datetime.now().year)).replace("_SITE_NAME_", SITE_NAME)
 
         # 创建邮件
         msg = MIMEText(content, 'html', 'utf-8')
