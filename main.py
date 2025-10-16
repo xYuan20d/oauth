@@ -1756,7 +1756,6 @@ def change_email():
         db.session.rollback()
         return jsonify({'success': False, 'error': f'修改邮箱失败: {str(e)}'})
 
-
 # 管理员路由
 @app.route('/admin/index')
 @admin_required
@@ -1765,8 +1764,354 @@ def admin_dashboard():
     管理员仪表板
     使用/admin/index代替/admin
     """
+    return render_template('admin.html', user=current_user, ADMIN_USERNAME=ADMIN_USERNAME)
 
-    return "空"
+
+# 管理员API路由
+@app.route('/api/admin/stats')
+@admin_required
+def admin_stats():
+    """管理员统计数据"""
+    try:
+        # 基本统计数据
+        total_users = User.query.count()
+        total_apps = OAuthClient.query.count()
+        total_authorizations = AuthorizationCode.query.count()
+
+        # 本月新增授权
+        now = datetime.utcnow()
+        first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        monthly_authorizations = AuthorizationCode.query.filter(
+            AuthorizationCode.expires_at >= first_day_of_month
+        ).count()
+
+        return jsonify({
+            'total_users': total_users,
+            'total_apps': total_apps,
+            'total_authorizations': total_authorizations,
+            'monthly_authorizations': monthly_authorizations
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取统计数据失败',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/admin/recent_users')
+@admin_required
+def admin_recent_users():
+    """获取最近注册的用户"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+
+        users = User.query.order_by(User.id.desc()).limit(limit).all()
+
+        user_list = []
+        for user in users:
+            user_list.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'email_verified': user.email_verified,
+                'created_at': user.created_at.isoformat() if hasattr(user, 'created_at') else None
+            })
+
+        return jsonify({'users': user_list})
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取用户数据失败',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/admin/recent_clients')
+@admin_required
+def admin_recent_clients():
+    """获取最近创建的应用"""
+    try:
+        limit = request.args.get('limit', 10, type=int)
+
+        clients = OAuthClient.query.order_by(OAuthClient.id.desc()).limit(limit).all()
+
+        client_list = []
+        for client in clients:
+            # 获取创建者用户名
+            creator = User.query.get(client.user_id)
+
+            # 解析重定向URI
+            try:
+                redirect_uris = json.loads(client.redirect_uris)
+                redirect_uris_count = len(redirect_uris)
+            except:
+                redirect_uris_count = 1
+
+            client_list.append({
+                'client_id': client.client_id,
+                'client_name': client.client_name,
+                'creator_username': creator.username if creator else '未知',
+                'created_at': client.created_at.isoformat(),
+                'redirect_uris_count': redirect_uris_count
+            })
+
+        return jsonify({'clients': client_list})
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取应用数据失败',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/admin/users')
+@admin_required
+def admin_users():
+    """获取用户列表（带分页）"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+        search = request.args.get('search', '')
+
+        # 构建查询
+        query = User.query
+
+        if search:
+            query = query.filter(
+                db.or_(
+                    User.username.ilike(f'%{search}%'),
+                    User.email.ilike(f'%{search}%')
+                )
+            )
+
+        # 分页
+        pagination = query.order_by(User.id.desc()).paginate(
+            page=page, per_page=limit, error_out=False
+        )
+
+        users = []
+        for user in pagination.items:
+            users.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'email_verified': user.email_verified,
+                'created_at': user.created_at.isoformat() if hasattr(user, 'created_at') else None
+            })
+
+        return jsonify({
+            'users': users,
+            'total_pages': pagination.pages,
+            'current_page': page,
+            'total_users': pagination.total
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取用户列表失败',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/admin/clients')
+@admin_required
+def admin_clients():
+    """获取应用列表（带分页）"""
+    try:
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+
+        # 分页查询
+        pagination = OAuthClient.query.order_by(OAuthClient.id.desc()).paginate(
+            page=page, per_page=limit, error_out=False
+        )
+
+        clients = []
+        for client in pagination.items:
+            # 获取创建者
+            creator = User.query.get(client.user_id)
+
+            # 统计授权次数
+            auth_count = AuthorizationCode.query.filter_by(
+                client_id=client.client_id
+            ).count()
+
+            clients.append({
+                'client_id': client.client_id,
+                'client_name': client.client_name,
+                'creator_username': creator.username if creator else '未知',
+                'created_at': client.created_at.isoformat(),
+                'auth_count': auth_count
+            })
+
+        return jsonify({
+            'clients': clients,
+            'total_pages': pagination.pages,
+            'current_page': page,
+            'total_clients': pagination.total
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取应用列表失败',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/authorizations')
+@admin_required
+def admin_authorizations():
+    """获取授权记录（带分页）"""
+    try:
+        # 获取并验证参数
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 10, type=int)
+
+        # 参数验证
+        if page < 1:
+            page = 1
+        if limit < 1 or limit > 100:
+            limit = 10
+
+        # 计算偏移量
+        offset = (page - 1) * limit
+
+        # 获取总记录数
+        total_count = AuthorizationCode.query.count()
+
+        # 计算总页数
+        total_pages = max(1, (total_count + limit - 1) // limit)
+
+        # 确保请求的页码不超过总页数
+        if page > total_pages:
+            page = total_pages
+            offset = (page - 1) * limit
+
+        # 获取分页数据
+        authorizations = AuthorizationCode.query.order_by(
+            AuthorizationCode.expires_at.desc()
+        ).offset(offset).limit(limit).all()
+
+        authorization_list = []
+        for auth in authorizations:
+            # 获取用户信息
+            user = User.query.get(auth.user_id)
+            # 获取客户端信息
+            client = OAuthClient.query.filter_by(client_id=auth.client_id).first()
+
+            # 确定状态
+            if auth.used:
+                status = '已使用'
+            elif auth.expires_at and auth.expires_at < datetime.utcnow():
+                status = '已过期'
+            else:
+                status = '有效'
+
+            authorization_list.append({
+                'code': auth.code,
+                'user_username': user.username if user else '未知用户',
+                'client_name': client.client_name if client else '未知应用',
+                'created_at': auth.expires_at.isoformat() if auth.expires_at else None,
+                'expires_at': auth.expires_at.isoformat() if auth.expires_at else None,
+                'used': auth.used,
+                'status': status
+            })
+
+        return jsonify({
+            'authorizations': authorization_list,
+            'total_pages': total_pages,
+            'current_page': page,
+            'total_authorizations': total_count,
+            'has_prev': page > 1,
+            'has_next': page < total_pages
+        })
+
+    except Exception as e:
+        print(f"获取授权记录时出错: {str(e)}")
+        import traceback
+        traceback.print_exc()  # 打印详细错误信息
+
+        return jsonify({
+            'error': '获取授权记录失败',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/admin/users/<int:user_id>', methods=['DELETE'])
+@admin_required
+def admin_delete_user(user_id):
+    """删除用户（管理员操作）"""
+    try:
+        user = User.query.get_or_404(user_id)
+
+        # 防止删除管理员自己
+        if user.username == ADMIN_USERNAME:
+            return jsonify({
+                'success': False,
+                'error': '不能删除管理员账户'
+            }), 400
+
+        # 删除用户相关的所有数据
+        # 1. 删除用户创建的客户端
+        clients = OAuthClient.query.filter_by(user_id=user_id).all()
+        for client in clients:
+            # 删除客户端相关的授权码和访问令牌
+            AuthorizationCode.query.filter_by(client_id=client.client_id).delete()
+            AccessToken.query.filter_by(client_id=client.client_id).delete()
+            ClientUserData.query.filter_by(client_id=client.client_id).delete()
+            db.session.delete(client)
+
+        # 2. 删除用户的授权码
+        AuthorizationCode.query.filter_by(user_id=user_id).delete()
+
+        # 3. 删除用户的访问令牌
+        AccessToken.query.filter_by(user_id=user_id).delete()
+
+        # 4. 删除用户的客户端数据
+        ClientUserData.query.filter_by(user_id=user_id).delete()
+
+        # 5. 删除用户
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'用户 {user.username} 已成功删除'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': f'删除用户失败: {str(e)}'
+        }), 500
+
+
+@app.route('/api/admin/clients/<client_id>', methods=['DELETE'])
+@admin_required
+def admin_delete_client(client_id):
+    """删除应用（管理员操作）"""
+    try:
+        client = OAuthClient.query.filter_by(client_id=client_id).first_or_404()
+
+        # 删除客户端相关的所有数据
+        AuthorizationCode.query.filter_by(client_id=client_id).delete()
+        AccessToken.query.filter_by(client_id=client_id).delete()
+        ClientUserData.query.filter_by(client_id=client_id).delete()
+
+        db.session.delete(client)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': f'应用 {client.client_name} 已成功删除'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': f'删除应用失败: {str(e)}'
+        }), 500
 
 
 if __name__ == '__main__':
