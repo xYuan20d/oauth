@@ -1,7 +1,6 @@
 // Settings Management
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('设置页面初始化...');
     initSettings();
 });
 
