@@ -124,9 +124,9 @@ def create_default_configs():
         },
         {
             'key': 'max_clients_per_user',
-            'value': '10',
+            'value': '-1',
             'value_type': 'number',
-            'description': '每个用户最多创建的应用数量',
+            'description': '每个用户最多创建的应用数量; <0 = 无限制',
             'category': 'limits',
             'is_public': False
         },
@@ -459,6 +459,7 @@ with app.app_context():
     create_default_configs()
     # 获取网站名称
     SITE_NAME = config_manager.get("site_name", "")
+    MAX_CLIENTS_PER_USER = int(config_manager.get("max_clients_per_user", default=-1))
     app.jinja_env.globals.update(SITE_NAME=SITE_NAME)
 
 
@@ -790,7 +791,12 @@ def create_oauth_client():
         client_name = request.form['client_name']
         redirect_uris_text = request.form['redirect_uris']
 
-        # 修复：将重定向URI转换为JSON格式存储
+        if MAX_CLIENTS_PER_USER >= 0:
+            if len(current_user.oauth_clients) == MAX_CLIENTS_PER_USER:
+                flash(f'OAuth应用创建失败，每个用户最多只能创建{MAX_CLIENTS_PER_USER}个应用！', 'error')
+                return redirect(url_for('oauth_clients'))
+
+        # 将重定向URI转换为JSON格式存储
         redirect_uris_list = [uri.strip() for uri in redirect_uris_text.split('\n') if uri.strip()]
         redirect_uris_json = json.dumps(redirect_uris_list)
 
