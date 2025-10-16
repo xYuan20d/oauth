@@ -97,10 +97,20 @@ function loadClientData(clientId) {
                         valueDisplay = JSON.stringify(item.value, null, 2);
                     }
 
+                    // 截断过长的值显示
+                    let displayValue = valueDisplay;
+                    if (displayValue && displayValue.length > 100) {
+                        displayValue = displayValue.substring(0, 100) + '...';
+                    }
+
                     html += `
                         <tr>
                             <td><strong>${item.key}</strong></td>
-                            <td><pre style="margin:0;max-width:300px;overflow:auto;background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;">${valueDisplay}</pre></td>
+                            <td>
+                                <div title="${valueDisplay}">
+                                    <pre style="margin:0;max-width:200px;overflow:auto;background:rgba(0,0,0,0.3);padding:8px;border-radius:4px;cursor:help;">${displayValue}</pre>
+                                </div>
+                            </td>
                             <td>${item.type}</td>
                             <td>${new Date(item.updated_at).toLocaleString()}</td>
                             <td>
@@ -123,13 +133,13 @@ function loadClientData(clientId) {
 }
 
 function clearClientData(clientId) {
-    confirmAction('确定要清除该应用的所有用户数据吗？此操作不可撤销！', () => {
+    confirmAction('确定要清除该应用的所有用户数据吗？此操作不可撤销，所有用户存储的数据都将被删除！', () => {
         fetch(`/api/client_data/${clientId}`, {
             method: 'DELETE'
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('清除数据失败');
+                return response.json().then(err => { throw new Error(err.error || '清除数据失败') });
             }
             return response.json();
         })
@@ -138,19 +148,24 @@ function clearClientData(clientId) {
             loadClientData(clientId);
         })
         .catch(error => {
+            console.error('清除数据失败:', error);
             showToast(`清除失败: ${error.message}`, 'error');
         });
     });
 }
 
+
 function deleteDataItem(clientId, key) {
-    confirmAction(`确定要删除键 "${key}" 的数据吗？`, () => {
-        fetch(`/api/client_data/${clientId}?key=${encodeURIComponent(key)}`, {
+    // 对键进行编码，防止特殊字符问题
+    const encodedKey = encodeURIComponent(key);
+
+    confirmAction(`确定要删除键 "${key}" 的数据吗？此操作不可撤销！`, () => {
+        fetch(`/api/client_data/${clientId}/item?key=${encodedKey}`, {
             method: 'DELETE'
         })
         .then(response => {
             if (!response.ok) {
-                throw new Error('删除数据失败');
+                return response.json().then(err => { throw new Error(err.error || '删除数据失败') });
             }
             return response.json();
         })
@@ -159,7 +174,81 @@ function deleteDataItem(clientId, key) {
             loadClientData(clientId);
         })
         .catch(error => {
+            console.error('删除数据项失败:', error);
             showToast(`删除失败: ${error.message}`, 'error');
         });
     });
+}
+
+function confirmAction(message, callback) {
+    // 创建自定义确认对话框
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            color: black;
+            text-align: center;
+        ">
+            <h3 style="color: #e74c3c; margin-bottom: 15px;">
+                <i class="fas fa-exclamation-triangle"></i> 确认操作
+            </h3>
+            <p style="margin-bottom: 25px; line-height: 1.5;">${message}</p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button id="confirmCancel" style="
+                    padding: 10px 20px;
+                    background: #95a5a6;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">取消</button>
+                <button id="confirmOk" style="
+                    padding: 10px 20px;
+                    background: #e74c3c;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">确认删除</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 绑定事件
+    document.getElementById('confirmCancel').onclick = () => {
+        document.body.removeChild(modal);
+    };
+
+    document.getElementById('confirmOk').onclick = () => {
+        document.body.removeChild(modal);
+        callback();
+    };
+
+    // ESC键关闭
+    const escHandler = (e) => {
+        if (e.key === 'Escape') {
+            document.body.removeChild(modal);
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
