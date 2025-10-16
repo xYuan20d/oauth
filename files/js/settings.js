@@ -17,6 +17,9 @@ function initSettings() {
 
     // Initialize danger zone
     initDangerZone();
+
+    // Initialize email change functionality
+    initEmailChange();
 }
 
 // Password strength indicator
@@ -26,18 +29,22 @@ function initPasswordStrength() {
     const strengthBar = document.getElementById('password-strength');
     const matchHint = document.getElementById('password-match-hint');
 
-    newPasswordInput.addEventListener('input', function() {
-        const password = this.value;
-        updatePasswordStrength(password, strengthBar);
-        checkPasswordMatch(newPasswordInput.value, confirmPasswordInput.value, matchHint);
-    });
+    if (newPasswordInput && confirmPasswordInput) {
+        newPasswordInput.addEventListener('input', function() {
+            const password = this.value;
+            updatePasswordStrength(password, strengthBar);
+            checkPasswordMatch(newPasswordInput.value, confirmPasswordInput.value, matchHint);
+        });
 
-    confirmPasswordInput.addEventListener('input', function() {
-        checkPasswordMatch(newPasswordInput.value, this.value, matchHint);
-    });
+        confirmPasswordInput.addEventListener('input', function() {
+            checkPasswordMatch(newPasswordInput.value, this.value, matchHint);
+        });
+    }
 }
 
 function updatePasswordStrength(password, strengthBar) {
+    if (!strengthBar) return;
+
     if (password.length === 0) {
         strengthBar.className = 'password-strength';
         strengthBar.style.width = '0%';
@@ -60,6 +67,8 @@ function updatePasswordStrength(password, strengthBar) {
 }
 
 function checkPasswordMatch(password, confirmPassword, hintElement) {
+    if (!hintElement) return;
+
     if (confirmPassword.length === 0) {
         hintElement.textContent = '';
         return;
@@ -71,6 +80,192 @@ function checkPasswordMatch(password, confirmPassword, hintElement) {
     } else {
         hintElement.textContent = '密码不匹配';
         hintElement.style.color = '#ea4335';
+    }
+}
+
+// Email change functionality
+function initEmailChange() {
+    const emailForm = document.getElementById('email-form');
+    const sendCodeBtn = document.getElementById('send-code-btn');
+    const verifyCodeBtn = document.getElementById('verify-code-btn');
+
+    if (sendCodeBtn) {
+        sendCodeBtn.addEventListener('click', function() {
+            sendEmailVerificationCode();
+        });
+    }
+
+    if (verifyCodeBtn) {
+        verifyCodeBtn.addEventListener('click', function() {
+            verifyEmailCode();
+        });
+    }
+
+    if (emailForm) {
+        emailForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            // 表单提交由按钮处理
+        });
+    }
+}
+
+async function sendEmailVerificationCode() {
+    const currentPassword = document.getElementById('email-current-password').value;
+    const newEmail = document.getElementById('new-email').value.trim();
+    const alertElement = document.getElementById('email-alert');
+    const sendCodeBtn = document.getElementById('send-code-btn');
+    const verificationSection = document.getElementById('verification-section');
+
+    // 验证必填字段
+    if (!currentPassword || !newEmail) {
+        showAlert(alertElement, '请填写当前密码和新邮箱地址', 'error');
+        return;
+    }
+
+    // 验证邮箱格式
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailPattern.test(newEmail)) {
+        showAlert(alertElement, '邮箱格式不正确', 'error');
+        return;
+    }
+
+    try {
+        // 禁用发送按钮，显示加载状态
+        sendCodeBtn.disabled = true;
+        sendCodeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 发送中...';
+
+        const response = await fetch('/api/change_email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_email: newEmail
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert(alertElement, result.message, 'success');
+            // 显示验证码输入区域
+            if (verificationSection) {
+                verificationSection.style.display = 'block';
+            }
+            // 启动倒计时
+            startVerificationCountdown();
+        } else {
+            showAlert(alertElement, result.error || '发送验证码失败', 'error');
+        }
+    } catch (error) {
+        console.error('发送验证码失败:', error);
+        showAlert(alertElement, '网络错误，请重试', 'error');
+    } finally {
+        // 恢复发送按钮
+        sendCodeBtn.disabled = false;
+        sendCodeBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 发送验证码';
+    }
+}
+
+async function verifyEmailCode() {
+    const currentPassword = document.getElementById('email-current-password').value;
+    const newEmail = document.getElementById('new-email').value.trim();
+    const verificationCode = document.getElementById('verification-code').value.trim();
+    const alertElement = document.getElementById('email-alert');
+    const verifyCodeBtn = document.getElementById('verify-code-btn');
+
+    if (!verificationCode) {
+        showAlert(alertElement, '请输入验证码', 'error');
+        return;
+    }
+
+    try {
+        // 禁用验证按钮，显示加载状态
+        verifyCodeBtn.disabled = true;
+        verifyCodeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 验证中...';
+
+        const response = await fetch('/api/change_email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_email: newEmail,
+                verification_code: verificationCode
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showAlert(alertElement, result.message, 'success');
+            // 更新页面显示的邮箱
+            const emailDisplay = document.getElementById('email');
+            if (emailDisplay && result.new_email) {
+                emailDisplay.value = result.new_email;
+            }
+            // 重置表单
+            document.getElementById('email-form').reset();
+            document.getElementById('verification-section').style.display = 'none';
+            // 清除倒计时
+            clearVerificationCountdown();
+        } else {
+            showAlert(alertElement, result.error || '验证失败', 'error');
+        }
+    } catch (error) {
+        console.error('验证失败:', error);
+        showAlert(alertElement, '网络错误，请重试', 'error');
+    } finally {
+        // 恢复验证按钮
+        verifyCodeBtn.disabled = false;
+        verifyCodeBtn.innerHTML = '<i class="fas fa-check"></i> 验证并修改';
+    }
+}
+
+let countdownInterval = null;
+
+function startVerificationCountdown() {
+    const sendCodeBtn = document.getElementById('send-code-btn');
+    const countdownDisplay = document.getElementById('countdown-display');
+    let timeLeft = 60;
+
+    // 禁用发送按钮
+    sendCodeBtn.disabled = true;
+
+    if (countdownDisplay) {
+        countdownDisplay.style.display = 'block';
+    }
+
+    countdownInterval = setInterval(() => {
+        if (countdownDisplay) {
+            countdownDisplay.textContent = `${timeLeft}秒后可重新发送`;
+        }
+
+        if (timeLeft <= 0) {
+            clearVerificationCountdown();
+        }
+        timeLeft--;
+    }, 1000);
+}
+
+function clearVerificationCountdown() {
+    const sendCodeBtn = document.getElementById('send-code-btn');
+    const countdownDisplay = document.getElementById('countdown-display');
+
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+
+    if (sendCodeBtn) {
+        sendCodeBtn.disabled = false;
+        sendCodeBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 重新发送验证码';
+    }
+
+    if (countdownDisplay) {
+        countdownDisplay.style.display = 'none';
     }
 }
 
@@ -111,7 +306,7 @@ async function saveProfileSettings(form) {
     }
 }
 
-// Change password - 修改为实际调用后端API
+// Change password
 async function changePassword(form) {
     const formData = new FormData(form);
     const alertElement = document.getElementById('password-alert');
@@ -213,6 +408,8 @@ function deleteAccount() {
 
 // Utility functions
 function showAlert(element, message, type) {
+    if (!element) return;
+
     element.textContent = message;
     element.className = `alert alert-${type}`;
     element.style.display = 'block';

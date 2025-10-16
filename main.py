@@ -1053,7 +1053,6 @@ def get_file(filename):
     # 获取当前脚本的绝对路径并拼接 "files" 目录
     current_dir = os.path.dirname(os.path.abspath(__file__))
     safe_path = os.path.join(current_dir, "files", filename)
-    print(safe_path)
 
     # 确保文件路径安全，防止路径遍历漏洞
     if os.path.isfile(safe_path):
@@ -1618,6 +1617,99 @@ def change_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': f'修改密码失败: {str(e)}'})
+
+@app.route('/api/change_email', methods=['POST'])
+@login_required
+def change_email():
+    """修改用户邮箱地址"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': '无效的请求数据'})
+
+        current_password = data.get('current_password')
+        new_email = data.get('new_email', '').strip().lower()
+        verification_code = data.get('verification_code')
+
+        # 验证必填字段
+        if not all([current_password, new_email]):
+            return jsonify({'success': False, 'error': '所有字段都是必填的'})
+
+        # 验证当前密码
+        if not current_user.verify_password(current_password):
+            return jsonify({'success': False, 'error': '当前密码错误'})
+
+        # 验证邮箱格式
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, new_email):
+            return jsonify({'success': False, 'error': '邮箱格式不正确'})
+
+        # 检查新邮箱是否与当前邮箱相同
+        if new_email == current_user.email:
+            return jsonify({'success': False, 'error': '新邮箱与当前邮箱相同'})
+
+        # 如果没有验证码，说明是第一步：发送验证码
+        if not verification_code:
+            # 检查邮箱是否已被注册
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user:
+                return jsonify({'success': False, 'error': '该邮箱已被注册'})
+
+            # 生成验证码
+            code = generate_verification_code()
+            expires_at = datetime.utcnow() + timedelta(minutes=10)
+
+            # 保存验证码到数据库
+            verification_record = EmailVerificationCode(
+                email=new_email,
+                code=code,
+                expires_at=expires_at
+            )
+
+            db.session.add(verification_record)
+            db.session.commit()
+
+            # 发送邮件
+            if send_verification_email(new_email, code):
+                return jsonify({
+                    'success': True,
+                    'message': '验证码已发送到新邮箱，请查收并输入验证码',
+                    'step': 'verify_code'
+                })
+            else:
+                # 如果发送失败，删除验证码记录
+                db.session.delete(verification_record)
+                db.session.commit()
+                return jsonify({'success': False, 'error': '邮件发送失败，请检查邮箱地址或稍后重试'})
+
+        # 如果有验证码，说明是第二步：验证并修改邮箱
+        else:
+            # 验证邮箱验证码
+            if not verify_email_code(new_email, verification_code):
+                return jsonify({'success': False, 'error': '验证码错误或已过期'})
+
+            # 再次检查邮箱是否已被注册（防止并发问题）
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user:
+                return jsonify({'success': False, 'error': '该邮箱已被注册'})
+
+            # 更新用户邮箱
+            old_email = current_user.email
+            current_user.email = new_email
+            current_user.email_verified = True  # 新邮箱已验证
+
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'message': '邮箱地址已成功修改',
+                'new_email': new_email
+            })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'修改邮箱失败: {str(e)}'})
 
 
 if __name__ == '__main__':
