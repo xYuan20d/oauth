@@ -34,6 +34,50 @@ if os.getenv('USE_CORS', 'False').lower() in ('true', '1', 't'):
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", secrets.token_hex(16))
 app.json.ensure_ascii = False
 
+# ADMIN配置
+ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
+
+# 管理员认证装饰器
+def admin_required(f):
+    """验证当前用户是否为管理员"""
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        # 检查当前用户是否为管理员
+        if current_user.username != ADMIN_USERNAME:
+            abort(404)  # 普通用户返回404
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+# 在应用启动时创建默认管理员账户
+def create_admin_user():
+    """创建或更新默认管理员账户"""
+    try:
+        admin_user = User.query.filter_by(username=ADMIN_USERNAME).first()
+
+        if admin_user:
+            # 更新现有管理员密码
+            admin_user.password_hash = generate_password_hash(ADMIN_PASSWORD)
+            print(f"管理员账户已存在，密码已更新: {ADMIN_USERNAME}")
+        else:
+            # 创建新的管理员账户
+            admin_user = User(
+                username=ADMIN_USERNAME,
+                password_hash=generate_password_hash(ADMIN_PASSWORD),
+                email=f"{ADMIN_USERNAME}@admin.local",  # 使用虚拟邮箱
+                email_verified=True
+            )
+            db.session.add(admin_user)
+            print(f"默认管理员账户已创建: {ADMIN_USERNAME}")
+
+        db.session.commit()
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"创建管理员账户时出错: {str(e)}")
+
 # 数据库配置
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
 
@@ -197,8 +241,9 @@ class AccessToken(db.Model):
     user_id = db.Column(DatabaseCompat.integer_type(), db.ForeignKey('user.id'), nullable=False)
 
 
-# 创建数据库表（在app_context内）
+# 创建数据库表（在app_context内）和管理员账户
 with app.app_context():
+    create_admin_user()
     db.create_all()
 
 def token_required(f):
@@ -1710,6 +1755,18 @@ def change_email():
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': f'修改邮箱失败: {str(e)}'})
+
+
+# 管理员路由
+@app.route('/admin/index')
+@admin_required
+def admin_dashboard():
+    """
+    管理员仪表板
+    使用/admin/index代替/admin
+    """
+
+    return "空"
 
 
 if __name__ == '__main__':
