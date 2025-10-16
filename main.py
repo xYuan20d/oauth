@@ -22,6 +22,8 @@ from sqlalchemy import distinct, Text, String, DateTime, Integer, Boolean
 from sqlalchemy.dialects.mysql import MEDIUMTEXT
 from urllib.parse import urlencode
 from dotenv import load_dotenv
+
+# 从.env文件中加载环境变量, 如果没有也不会报错
 load_dotenv()
 
 # 初始化Flask应用
@@ -370,7 +372,6 @@ def send_verification_code():
         email = data['email'].strip().lower()
 
         # 验证邮箱格式
-        import re
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             return jsonify({'success': False, 'error': '邮箱格式不正确'})
@@ -1693,7 +1694,6 @@ def change_email():
             return jsonify({'success': False, 'error': '当前密码错误'})
 
         # 验证邮箱格式
-        import re
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, new_email):
             return jsonify({'success': False, 'error': '邮箱格式不正确'})
