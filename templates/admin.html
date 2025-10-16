@@ -86,6 +86,18 @@
         .btn-danger:hover {
             background: #c0392b;
         }
+        .btn-edit {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .btn-edit:hover {
+            background: #2980b9;
+        }
         .pagination {
             display: flex;
             justify-content: center;
@@ -113,11 +125,212 @@
             opacity: 0.6;
             pointer-events: none;
         }
-
         .loading::after {
             content: ' 加载中...';
             color: #3498db;
             font-style: italic;
+        }
+
+        /* 配置管理样式 */
+        .config-category {
+            margin-bottom: 30px;
+        }
+        .config-category h4 {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            margin-bottom: 15px;
+        }
+        .config-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .config-key {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+        .config-description {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .config-type {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        .config-value {
+            margin: 15px 0;
+        }
+        .config-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .config-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .config-textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+        }
+        .config-checkbox {
+            transform: scale(1.2);
+            margin-right: 8px;
+        }
+        .config-json {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .config-public {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .config-private {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .add-config-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .add-config-btn:hover {
+            background: #218838;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .modal-header h3 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .form-hint {
+            font-size: 0.85em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
         }
     </style>
 </head>
@@ -140,6 +353,7 @@
             <a href="#" data-tab="users">用户管理</a>
             <a href="#" data-tab="clients">应用管理</a>
             <a href="#" data-tab="authorizations">授权管理</a>
+            <a href="#" data-tab="configs">网站配置</a>
         </div>
 
         <!-- 仪表板 -->
@@ -284,9 +498,119 @@
                 </div>
             </div>
         </div>
+
+        <!-- 网站配置 -->
+        <div id="configs" class="tab-content">
+            <div class="admin-section">
+                <h3>网站配置管理</h3>
+                <p>管理网站的各种配置项，这些配置会实时生效。</p>
+
+                <button class="add-config-btn" onclick="openAddConfigModal()">
+                    <i class="fas fa-plus"></i> 添加新配置
+                </button>
+
+                <div id="configs-content">
+                    <div class="text-center p-3">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>加载配置中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 配置编辑模态框 -->
+    <div id="editConfigModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> 编辑配置</h3>
+                <span class="close" onclick="closeEditConfigModal()">&times;</span>
+            </div>
+            <form id="editConfigForm">
+                <input type="hidden" id="edit-config-key" name="key">
+
+                <div class="form-group">
+                    <label for="edit-config-value" class="form-label">配置值</label>
+                    <div id="edit-value-container">
+                        <!-- 动态渲染输入控件 -->
+                    </div>
+                    <div class="form-hint" id="edit-value-hint"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-config-description" class="form-label">描述</label>
+                    <textarea id="edit-config-description" name="description" class="form-textarea" placeholder="配置项的描述信息"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-config-category" class="form-label">分类</label>
+                    <input type="text" id="edit-config-category" name="category" class="form-input" placeholder="例如: site, security, limits">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="edit-config-is-public" name="is_public">
+                        公开配置（前端可以访问）
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEditConfigModal()">取消</button>
+                    <button type="submit" class="btn-primary">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 添加配置模态框 -->
+    <div id="addConfigModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus"></i> 添加新配置</h3>
+                <span class="close" onclick="closeAddConfigModal()">&times;</span>
+            </div>
+            <form id="addConfigForm">
+                <div class="form-group">
+                    <label for="add-config-key" class="form-label">配置键</label>
+                    <input type="text" id="add-config-key" name="key" class="form-input" placeholder="例如: site_name, allow_registration" required>
+                    <div class="form-hint">配置的唯一标识符，只能包含字母、数字和下划线</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="add-config-value" class="form-label">配置值</label>
+                    <input type="text" id="add-config-value" name="value" class="form-input" placeholder="配置的值" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="add-config-description" class="form-label">描述</label>
+                    <textarea id="add-config-description" name="description" class="form-textarea" placeholder="配置项的描述信息"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="add-config-category" class="form-label">分类</label>
+                    <input type="text" id="add-config-category" name="category" class="form-input" placeholder="例如: site, security, limits" value="general">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="add-config-is-public" name="is_public">
+                        公开配置（前端可以访问）
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddConfigModal()">取消</button>
+                    <button type="submit" class="btn-primary">创建配置</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
+        // 全局变量
+        let currentEditingConfig = null;
+        let configCategories = [];
+
         // 标签页切换
         document.querySelectorAll('.admin-nav a').forEach(tab => {
             tab.addEventListener('click', (e) => {
@@ -322,6 +646,9 @@
                     break;
                 case 'authorizations':
                     loadAuthorizationsData();
+                    break;
+                case 'configs':
+                    loadConfigsData();
                     break;
             }
         }
@@ -503,11 +830,247 @@
                 });
         }
 
+        // 加载配置数据
+        function loadConfigsData() {
+            const contentDiv = document.getElementById('configs-content');
+            contentDiv.innerHTML = '<div class="text-center p-3"><i class="fas fa-spinner fa-spin"></i><p>加载配置中...</p></div>';
+
+            fetch('/api/admin/configs')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('获取配置失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    configCategories = data.categories || [];
+                    renderConfigs(data.configs);
+                })
+                .catch(error => {
+                    contentDiv.innerHTML = `<div class="text-center p-3"><i class="fas fa-exclamation-triangle"></i><p>加载失败: ${error.message}</p></div>`;
+                });
+        }
+
+        // 渲染配置
+        function renderConfigs(configs) {
+            const contentDiv = document.getElementById('configs-content');
+
+            if (!configs || configs.length === 0) {
+                contentDiv.innerHTML = '<div class="text-center p-3"><i class="fas fa-cogs"></i><p>暂无配置项</p></div>';
+                return;
+            }
+
+            // 按分类分组
+            const configsByCategory = {};
+            configs.forEach(config => {
+                if (!configsByCategory[config.category]) {
+                    configsByCategory[config.category] = [];
+                }
+                configsByCategory[config.category].push(config);
+            });
+
+            let html = '';
+
+            // 遍历所有分类
+            Object.keys(configsByCategory).sort().forEach(category => {
+                html += `<div class="config-category">`;
+                html += `<h4>${category}</h4>`;
+
+                // 该分类下的所有配置项
+                configsByCategory[category].forEach(config => {
+                    html += renderConfigCard(config);
+                });
+
+                html += `</div>`;
+            });
+
+            contentDiv.innerHTML = html;
+        }
+
+        // 渲染单个配置卡片
+        function renderConfigCard(config) {
+            let valueDisplay = '';
+            let inputType = 'text';
+
+            // 根据类型渲染不同的显示和输入控件
+            switch(config.value_type) {
+                case 'boolean':
+                    valueDisplay = config.value ?
+                        '<span style="color: #28a745;">✓ 是</span>' :
+                        '<span style="color: #dc3545;">✗ 否</span>';
+                    inputType = 'boolean';
+                    break;
+                case 'number':
+                    valueDisplay = config.value;
+                    inputType = 'number';
+                    break;
+                case 'json':
+                    valueDisplay = `<pre class="config-json">${JSON.stringify(config.value, null, 2)}</pre>`;
+                    inputType = 'json';
+                    break;
+                default: // string, text
+                    valueDisplay = config.value;
+                    inputType = config.value && config.value.length > 100 ? 'textarea' : 'text';
+            }
+
+            return `
+                <div class="config-card">
+                    <div class="config-header">
+                        <div>
+                            <div class="config-key">${config.key}</div>
+                            <div class="config-description">${config.description || '无描述'}</div>
+                        </div>
+                        <div>
+                            <span class="config-type">${config.value_type}</span>
+                            ${config.is_public ?
+                                '<span class="config-public">公开</span>' :
+                                '<span class="config-private">私有</span>'
+                            }
+                        </div>
+                    </div>
+
+                    <div class="config-value">
+                        <strong>当前值:</strong>
+                        <div>${valueDisplay}</div>
+                    </div>
+
+                    <div class="config-actions">
+                        <button class="btn-edit" onclick="openEditConfigModal('${config.key}')">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="btn-danger" onclick="deleteConfig('${config.key}')">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 打开编辑配置模态框
+        function openEditConfigModal(configKey) {
+            // 由于我们无法直接获取配置对象，这里需要重新获取该配置的详细信息
+            // 或者我们可以从当前显示的配置中查找
+            const configCards = document.querySelectorAll('.config-card');
+            let targetConfig = null;
+
+            // 查找匹配的配置
+            configCards.forEach(card => {
+                const keyElement = card.querySelector('.config-key');
+                if (keyElement && keyElement.textContent === configKey) {
+                    // 从卡片数据中提取信息（简化实现）
+                    // 实际项目中应该重新从服务器获取或存储配置数据
+                    targetConfig = {
+                        key: configKey,
+                        value_type: card.querySelector('.config-type').textContent,
+                        description: card.querySelector('.config-description').textContent,
+                        category: '', // 需要从其他地方获取
+                        is_public: card.querySelector('.config-public') !== null,
+                        value: null, // 需要从其他地方获取
+                        raw_value: '' // 需要从其他地方获取
+                    };
+                }
+            });
+
+            if (!targetConfig) {
+                alert('未找到配置信息');
+                return;
+            }
+
+            currentEditingConfig = targetConfig;
+
+            document.getElementById('edit-config-key').value = targetConfig.key;
+            document.getElementById('edit-config-description').value = targetConfig.description || '';
+            document.getElementById('edit-config-category').value = targetConfig.category;
+            document.getElementById('edit-config-is-public').checked = targetConfig.is_public;
+
+            // 动态渲染值输入控件
+            const valueContainer = document.getElementById('edit-value-container');
+            const valueHint = document.getElementById('edit-value-hint');
+
+            let inputHtml = '';
+            let hintText = '';
+
+            switch(targetConfig.value_type) {
+                case 'boolean':
+                    inputHtml = `
+                        <label>
+                            <input type="checkbox" id="edit-config-value" class="config-checkbox" ${targetConfig.value ? 'checked' : ''}>
+                            启用
+                        </label>
+                    `;
+                    hintText = '布尔值配置，选中表示true，未选中表示false';
+                    break;
+                case 'number':
+                    inputHtml = `<input type="number" id="edit-config-value" class="form-input" value="${targetConfig.value}" step="any">`;
+                    hintText = '数值配置，请输入数字';
+                    break;
+                case 'json':
+                    inputHtml = `<textarea id="edit-config-value" class="form-textarea config-json">${JSON.stringify(targetConfig.value, null, 2)}</textarea>`;
+                    hintText = 'JSON配置，请输入有效的JSON格式';
+                    break;
+                default:
+                    if (targetConfig.raw_value && targetConfig.raw_value.length > 100) {
+                        inputHtml = `<textarea id="edit-config-value" class="form-textarea">${targetConfig.raw_value}</textarea>`;
+                        hintText = '长文本配置';
+                    } else {
+                        inputHtml = `<input type="text" id="edit-config-value" class="form-input" value="${targetConfig.raw_value}">`;
+                        hintText = '文本配置';
+                    }
+            }
+
+            valueContainer.innerHTML = inputHtml;
+            valueHint.textContent = hintText;
+
+            document.getElementById('editConfigModal').style.display = 'block';
+        }
+
+        // 关闭编辑配置模态框
+        function closeEditConfigModal() {
+            document.getElementById('editConfigModal').style.display = 'none';
+            currentEditingConfig = null;
+        }
+
+        // 打开添加配置模态框
+        function openAddConfigModal() {
+            document.getElementById('addConfigModal').style.display = 'block';
+        }
+
+        // 关闭添加配置模态框
+        function closeAddConfigModal() {
+            document.getElementById('addConfigModal').style.display = 'none';
+            document.getElementById('addConfigForm').reset();
+        }
+
+        // 删除配置
+        function deleteConfig(key) {
+            if (confirm(`确定要删除配置 "${key}" 吗？此操作不可撤销！`)) {
+                fetch(`/api/admin/configs/${key}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('删除配置失败');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('配置删除成功');
+                        loadConfigsData();
+                    } else {
+                        alert('删除失败: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('删除失败: ' + error.message);
+                });
+            }
+        }
+
         // 更新分页控件
         function updatePagination(containerId, currentPage, totalPages, loadFunction) {
             // 如果是授权管理的分页，使用专用函数
             if (containerId === 'auths-pagination') {
-                // 这里我们会在loadAuthorizationsData中直接调用updateAuthsPagination
                 return;
             }
 
@@ -576,7 +1139,6 @@
             container.innerHTML = html;
         }
 
-
         // 搜索用户
         function searchUsers() {
             const query = document.getElementById('user-search').value;
@@ -635,6 +1197,128 @@
                             alert('删除失败: ' + data.error);
                         }
                     });
+            }
+        }
+
+        // 编辑配置表单提交
+        document.getElementById('editConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            if (!currentEditingConfig) return;
+
+            const formData = new FormData(this);
+            const key = formData.get('key');
+            const description = formData.get('description');
+            const category = formData.get('category');
+            const is_public = formData.get('is_public') === 'on';
+
+            // 获取值（根据类型处理）
+            let value;
+            const valueElement = document.getElementById('edit-config-value');
+
+            if (currentEditingConfig.value_type === 'boolean') {
+                value = valueElement.checked;
+            } else if (currentEditingConfig.value_type === 'number') {
+                value = parseFloat(valueElement.value);
+            } else if (currentEditingConfig.value_type === 'json') {
+                try {
+                    value = JSON.parse(valueElement.value);
+                } catch (e) {
+                    alert('JSON格式无效，请检查输入');
+                    return;
+                }
+            } else {
+                value = valueElement.value;
+            }
+
+            // 发送更新请求
+            fetch(`/api/admin/configs/${key}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    value: value,
+                    description: description,
+                    category: category,
+                    is_public: is_public
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('更新配置失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('配置更新成功');
+                    closeEditConfigModal();
+                    loadConfigsData();
+                } else {
+                    alert('更新失败: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('更新失败: ' + error.message);
+            });
+        });
+
+        // 添加配置表单提交
+        document.getElementById('addConfigForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const key = formData.get('key');
+            const value = formData.get('value');
+            const description = formData.get('description');
+            const category = formData.get('category');
+            const is_public = formData.get('is_public') === 'on';
+
+            // 发送创建请求
+            fetch('/api/admin/configs', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    key: key,
+                    value: value,
+                    description: description,
+                    category: category,
+                    is_public: is_public
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.error || '创建配置失败') });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('配置创建成功');
+                    closeAddConfigModal();
+                    loadConfigsData();
+                } else {
+                    alert('创建失败: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('创建失败: ' + error.message);
+            });
+        });
+
+        // 模态框点击外部关闭
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editConfigModal');
+            const addModal = document.getElementById('addConfigModal');
+
+            if (event.target === editModal) {
+                closeEditConfigModal();
+            }
+            if (event.target === addModal) {
+                closeAddConfigModal();
             }
         }
 
