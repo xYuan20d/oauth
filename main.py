@@ -115,14 +115,6 @@ def create_default_configs():
             'is_public': False
         },
         {
-            'key': 'require_email_verification',
-            'value': 'true',
-            'value_type': 'boolean',
-            'description': '注册是否需要邮箱验证',
-            'category': 'security',
-            'is_public': False
-        },
-        {
             'key': 'max_clients_per_user',
             'value': '-1',
             'value_type': 'number',
@@ -457,10 +449,17 @@ with app.app_context():
     create_admin_user()
     db.create_all()
     create_default_configs()
-    # 获取网站名称
+    # 获取网站信息
     SITE_NAME = config_manager.get("site_name", "")
-    MAX_CLIENTS_PER_USER = int(config_manager.get("max_clients_per_user", default=-1))
-    app.jinja_env.globals.update(SITE_NAME=SITE_NAME)
+    SITE_DESCRIPTION = config_manager.get("site_description", "")
+    SITE_KEYWORDS = config_manager.get("site_keywords", "")
+
+    MAX_CLIENTS_PER_USER = config_manager.get("max_clients_per_user", default=-1)
+    TOKEN_EXPIRE_DAYS = config_manager.get("token_expire_days", default=30)
+
+    ALLOW_REGISTRATION = config_manager.get("allow_registration", default=True)
+    app.jinja_env.globals.update(SITE_NAME=SITE_NAME, SITE_DESCRIPTION=SITE_DESCRIPTION, SITE_KEYWORDS=SITE_KEYWORDS,
+                                 ALLOW_REGISTRATION=ALLOW_REGISTRATION)
 
 
 def token_required(f):
@@ -666,57 +665,60 @@ def load_user(user_id):
 # 注册路由
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password']
-        confirm_password = request.form['confirm_password']
-        email = request.form['email'].strip().lower()
-        verification_code = request.form['verification_code'].strip()
+    if ALLOW_REGISTRATION:
+        if request.method == 'POST':
+            username = request.form['username'].strip()
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
+            email = request.form['email'].strip().lower()
+            verification_code = request.form['verification_code'].strip()
 
-        # 验证必填字段
-        if not all([username, password, confirm_password, email, verification_code]):
-            flash('所有字段都是必填的!', 'error')
-            return redirect(url_for('register'))
+            # 验证必填字段
+            if not all([username, password, confirm_password, email, verification_code]):
+                flash('所有字段都是必填的!', 'error')
+                return redirect(url_for('register'))
 
-        # 检查用户名是否已存在
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
-            flash('用户名已存在!', 'error')
-            return redirect(url_for('register'))
+            # 检查用户名是否已存在
+            existing_user = User.query.filter_by(username=username).first()
+            if existing_user:
+                flash('用户名已存在!', 'error')
+                return redirect(url_for('register'))
 
-        # 检查邮箱是否已存在
-        existing_email = User.query.filter_by(email=email).first()
-        if existing_email:
-            flash('该邮箱已被注册!', 'error')
-            return redirect(url_for('register'))
+            # 检查邮箱是否已存在
+            existing_email = User.query.filter_by(email=email).first()
+            if existing_email:
+                flash('该邮箱已被注册!', 'error')
+                return redirect(url_for('register'))
 
-        # 检查密码和确认密码是否一致
-        if password != confirm_password:
-            flash('密码和确认密码不一致，请重新输入!', 'error')
-            return redirect(url_for('register'))
+            # 检查密码和确认密码是否一致
+            if password != confirm_password:
+                flash('密码和确认密码不一致，请重新输入!', 'error')
+                return redirect(url_for('register'))
 
-        # 验证邮箱验证码
-        if not verify_email_code(email, verification_code):
-            flash('验证码错误或已过期!', 'error')
-            return redirect(url_for('register'))
+            # 验证邮箱验证码
+            if not verify_email_code(email, verification_code):
+                flash('验证码错误或已过期!', 'error')
+                return redirect(url_for('register'))
 
-        # 密码哈希
-        password_hash = generate_password_hash(password)
+            # 密码哈希
+            password_hash = generate_password_hash(password)
 
-        # 创建用户对象并存入数据库
-        new_user = User(
-            username=username,
-            password_hash=password_hash,
-            email=email,
-            email_verified=True  # 验证通过后标记为已验证
-        )
-        db.session.add(new_user)
-        db.session.commit()
+            # 创建用户对象并存入数据库
+            new_user = User(
+                username=username,
+                password_hash=password_hash,
+                email=email,
+                email_verified=True  # 验证通过后标记为已验证
+            )
+            db.session.add(new_user)
+            db.session.commit()
 
-        flash('注册成功！邮箱已验证。', 'success')
-        return redirect(url_for('login'))
+            flash('注册成功！邮箱已验证。', 'success')
+            return redirect(url_for('login'))
 
-    return render_template('register.html')
+        return render_template('register.html')
+    else:
+        abort(404)
 
 # 登录路由
 @app.route('/login', methods=['GET', 'POST'])
@@ -937,7 +939,7 @@ def oauth_token():
         # 生成访问令牌
         access_token = secrets.token_urlsafe(40)
         refresh_token = secrets.token_urlsafe(40)
-        expires_at = datetime.utcnow() + timedelta(days=30)
+        expires_at = datetime.utcnow() + timedelta(days=TOKEN_EXPIRE_DAYS)
 
         token = AccessToken(
             token=access_token,
@@ -953,7 +955,7 @@ def oauth_token():
         return jsonify({
             'access_token': access_token,
             'token_type': 'Bearer',
-            'expires_in': 30 * 24 * 3600,  # 三十天
+            'expires_in': TOKEN_EXPIRE_DAYS * 24 * 3600,  # 过期时间(day)
             'refresh_token': refresh_token,
             'scope': auth_code.scope
         })
@@ -2435,9 +2437,35 @@ def admin_update_config(key):
         if not config:
             return jsonify({'error': '配置不存在'}), 404
 
-        # 更新配置
+        # 更新配置 - 明确处理类型信息
         if 'value' in data:
-            config.set_value(data['value'])
+            # 如果请求中明确指定了 value_type，使用指定的类型
+            if 'value_type' in data:
+                # 根据指定的类型处理值
+                value_type = data['value_type']
+                if value_type == 'boolean':
+                    # 确保布尔值被正确处理
+                    if isinstance(data['value'], bool):
+                        config.value = 'true' if data['value'] else 'false'
+                    else:
+                        config.value = 'true' if str(data['value']).lower() in ('true', '1', 'yes') else 'false'
+                    config.value_type = 'boolean'
+                elif value_type == 'number':
+                    config.value = str(data['value'])
+                    config.value_type = 'number'
+                elif value_type == 'json':
+                    if isinstance(data['value'], (dict, list)):
+                        config.value = json.dumps(data['value'], ensure_ascii=False)
+                    else:
+                        config.value = str(data['value'])
+                    config.value_type = 'json'
+                else:  # string, text
+                    config.value = str(data['value'])
+                    config.value_type = value_type
+            else:
+                # 使用原有的 set_value 方法（自动推断类型）
+                config.set_value(data['value'])
+
         if 'description' in data:
             config.description = data['description']
         if 'category' in data:

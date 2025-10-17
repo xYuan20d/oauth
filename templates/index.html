@@ -406,9 +406,11 @@
                     <a href="{{ url_for('login') }}" class="btn btn-primary">
                         <i class="fas fa-sign-in-alt"></i> 立即登录
                     </a>
-                    <a href="{{ url_for('register') }}" class="btn btn-secondary">
-                        <i class="fas fa-user-plus"></i> 注册账户
-                    </a>
+                    {% if ALLOW_REGISTRATION %}
+                        <a href="{{ url_for('register') }}" class="btn btn-secondary">
+                            <i class="fas fa-user-plus"></i> 注册账户
+                        </a>
+                    {% endif %}
                 </div>
             </div>
 

@@ -367,12 +367,14 @@
             </form>
 
             <div class="footer-links">
-                <p>
-                    还没有账户？
-                    <a href="{{ url_for('register') }}" class="footer-link">
-                        <i class="fas fa-user-plus"></i> 立即注册
-                    </a>
-                </p>
+                {% if ALLOW_REGISTRATION %}
+                    <p>
+                        还没有账户？
+                        <a href="{{ url_for('register') }}" class="footer-link">
+                            <i class="fas fa-user-plus"></i> 立即注册
+                        </a>
+                    </p>
+                {% endif %}
                 <p style="margin-top: 10px;">
                     <a href="/" class="footer-link">
                         <i class="fas fa-arrow-left"></i> 返回首页
