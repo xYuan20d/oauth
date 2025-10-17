@@ -11,7 +11,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import base64
 from io import BytesIO
@@ -150,6 +150,8 @@ def create_default_configs():
         db.session.rollback()
         print(f"初始化默认配置时出错: {str(e)}")
 
+def get_utc_now():
+    return datetime.now(timezone.utc)
 
 # 数据库配置
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
@@ -243,8 +245,8 @@ class SiteConfig(db.Model):
     description = db.Column(DatabaseCompat.text_type())  # 配置项描述
     category = db.Column(DatabaseCompat.string_type(50), default='general')  # 配置分类
     is_public = db.Column(DatabaseCompat.boolean_type(), default=False)  # 是否公开（前端可访问）
-    created_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow)
-    updated_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now)
+    updated_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now, onupdate=get_utc_now)
 
     def get_value(self):
         """根据类型返回解析后的值"""
@@ -302,7 +304,7 @@ class ConfigManager:
             config.description = description or config.description
             config.category = category
             config.is_public = is_public
-            config.updated_at = datetime.utcnow()
+            config.updated_at = get_utc_now()
         else:
             config = SiteConfig(
                 key=key,
@@ -371,7 +373,7 @@ class EmailVerificationCode(db.Model):
     id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
     email = db.Column(DatabaseCompat.string_type(150), nullable=False, index=True)
     code = db.Column(DatabaseCompat.string_type(6), nullable=False)
-    created_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow)
+    created_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now)
     expires_at = db.Column(DatabaseCompat.datetime_type(), nullable=False)
     used = db.Column(DatabaseCompat.boolean_type(), default=False)
 
@@ -406,8 +408,8 @@ class ClientUserData(db.Model):
     data_key = db.Column(DatabaseCompat.string_type(200), nullable=False)  # 数据键名
     data_value = db.Column(DatabaseCompat.text_type())  # 数据值（JSON格式）
     data_type = db.Column(DatabaseCompat.string_type(50))  # 数据类型
-    created_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow)
-    updated_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now)
+    updated_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now, onupdate=get_utc_now)
 
     # 唯一约束：同一客户端同一用户的相同键名只能有一条记录
     __table_args__ = (db.UniqueConstraint('client_id', 'user_id', 'data_key', name='_client_user_key_uc'),)
@@ -422,7 +424,7 @@ class OAuthClient(db.Model):
     client_name = db.Column(DatabaseCompat.string_type(100), nullable=False)
     redirect_uris = db.Column(DatabaseCompat.text_type(), nullable=False)  # JSON格式的URI列表
     user_id = db.Column(DatabaseCompat.integer_type(), db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(DatabaseCompat.datetime_type(), default=datetime.utcnow)
+    created_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now)
 
 
 # 授权码模型 - 使用足够长的VARCHAR类型
@@ -484,7 +486,7 @@ def token_required(f):
         if not token:
             return jsonify(error='invalid_token', error_description='无效的访问令牌'), 401
 
-        if token.expires_at < datetime.utcnow():
+        if token.expires_at < get_utc_now():
             return jsonify(error='invalid_token', error_description='访问令牌已过期'), 401
 
         # 将令牌和用户信息添加到请求上下文中
@@ -509,7 +511,7 @@ def token_required_or_optional(optional=False):
 
                 # 验证访问令牌
                 token = AccessToken.query.filter_by(token=access_token).first()
-                if token and token.expires_at >= datetime.utcnow():
+                if token and token.expires_at >= get_utc_now():
                     g.access_token = token
                     g.current_user = User.query.get(token.user_id)
                     g.has_valid_token = True
@@ -603,7 +605,7 @@ def send_verification_code():
         # 检查是否在60秒内已经发送过验证码
         recent_code = EmailVerificationCode.query.filter(
             EmailVerificationCode.email == email,
-            EmailVerificationCode.created_at > datetime.utcnow() - timedelta(seconds=60),
+            EmailVerificationCode.created_at > get_utc_now() - timedelta(seconds=60),
             EmailVerificationCode.used == False
         ).first()
 
@@ -612,7 +614,7 @@ def send_verification_code():
 
         # 生成验证码
         code = generate_verification_code()
-        expires_at = datetime.utcnow() + timedelta(minutes=10)
+        expires_at = get_utc_now() + timedelta(minutes=10)
 
         # 保存验证码到数据库
         verification_code = EmailVerificationCode(
@@ -646,7 +648,7 @@ def verify_email_code(email, code):
         verification = EmailVerificationCode.query.filter(
             EmailVerificationCode.email == email,
             EmailVerificationCode.code == code,
-            EmailVerificationCode.expires_at > datetime.utcnow(),
+            EmailVerificationCode.expires_at > get_utc_now(),
             EmailVerificationCode.used == False
         ).first()
 
@@ -871,7 +873,7 @@ def oauth_authorize():
         if 'confirm' in request.form:
             # 生成授权码
             code = secrets.token_urlsafe(30)
-            expires_at = datetime.utcnow() + timedelta(minutes=10)
+            expires_at = get_utc_now() + timedelta(minutes=10)
 
             authorization_code = AuthorizationCode(
                 code=code,
@@ -930,7 +932,7 @@ def oauth_token():
         if not auth_code:
             return jsonify(error='invalid_grant', error_description='无效的授权码'), 400
 
-        if auth_code.expires_at < datetime.utcnow():
+        if auth_code.expires_at < get_utc_now():
             return jsonify(error='invalid_grant', error_description='授权码已过期'), 400
 
         if auth_code.redirect_uri != redirect_uri:
@@ -945,7 +947,7 @@ def oauth_token():
         # 生成访问令牌
         access_token = secrets.token_urlsafe(40)
         refresh_token = secrets.token_urlsafe(40)
-        expires_at = datetime.utcnow() + timedelta(days=TOKEN_EXPIRE_DAYS)
+        expires_at = get_utc_now() + timedelta(days=TOKEN_EXPIRE_DAYS)
 
         token = AccessToken(
             token=access_token,
@@ -984,7 +986,7 @@ def oauth_userinfo():
     if not token:
         return jsonify(error='invalid_token', error_description='无效的访问令牌'), 401
 
-    if token.expires_at < datetime.utcnow():
+    if token.expires_at < get_utc_now():
         return jsonify(error='invalid_token', error_description='访问令牌已过期'), 401
 
     # 获取用户信息
@@ -1054,7 +1056,7 @@ def store_client_data():
     access_token = auth_header[7:]
     token = AccessToken.query.filter_by(token=access_token).first()
 
-    if not token or token.expires_at < datetime.utcnow():
+    if not token or token.expires_at < get_utc_now():
         return jsonify(error='invalid_token', error_description='无效或过期的访问令牌'), 401
 
     # 🔧 修复：只验证客户端存在，不验证客户端所有者
@@ -1085,7 +1087,7 @@ def store_client_data():
         # 更新现有数据
         client_data.data_value = json.dumps(value) if value else None
         client_data.data_type = data_type
-        client_data.updated_at = datetime.utcnow()
+        client_data.updated_at = get_utc_now()
     else:
         # 创建新数据
         client_data = ClientUserData(
@@ -1117,7 +1119,7 @@ def get_client_data():
     access_token = auth_header[7:]
     token = AccessToken.query.filter_by(token=access_token).first()
 
-    if not token or token.expires_at < datetime.utcnow():
+    if not token or token.expires_at < get_utc_now():
         return jsonify(error='invalid_token', error_description='无效或过期的访问令牌'), 401
 
     # 获取查询参数
@@ -1185,7 +1187,7 @@ def delete_client_data():
     access_token = auth_header[7:]
     token = AccessToken.query.filter_by(token=access_token).first()
 
-    if not token or token.expires_at < datetime.utcnow():
+    if not token or token.expires_at < get_utc_now():
         return jsonify(error='invalid_token', error_description='无效或过期的访问令牌'), 401
 
     # 获取要删除的键
@@ -1418,7 +1420,7 @@ def stats_monthly_authorizations():
         return jsonify({'count': 0})
 
     # 获取本月的开始和结束时间
-    now = datetime.utcnow()
+    now = get_utc_now()
     first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
     # 统计本月新增的不同用户数量
@@ -1515,7 +1517,7 @@ def get_authorized_apps():
                 active_token = AccessToken.query.filter(
                     AccessToken.user_id == current_user.id,
                     AccessToken.client_id == client_id,
-                    AccessToken.expires_at > datetime.utcnow()  # 修正：使用 > 操作符而不是 __gt
+                    AccessToken.expires_at > get_utc_now()  # 修正：使用 > 操作符而不是 __gt
                 ).first()
 
                 # 获取最近授权时间
@@ -1684,7 +1686,7 @@ def get_authorization_details(client_id):
         active_token = AccessToken.query.filter(
             AccessToken.user_id == current_user.id,
             AccessToken.client_id == client_id,
-            AccessToken.expires_at > datetime.utcnow()  # 修正：使用 > 操作符
+            AccessToken.expires_at > get_utc_now()  # 修正：使用 > 操作符
         ).first()
 
         # 获取授权历史
@@ -1706,7 +1708,7 @@ def get_authorization_details(client_id):
                 'authorized_at': auth.expires_at.isoformat(),
                 'scope': auth.scope,
                 'used': auth.used,
-                'expired': auth.expires_at < datetime.utcnow()
+                'expired': auth.expires_at < get_utc_now()
             })
 
         # 格式化存储的数据
@@ -1939,7 +1941,7 @@ def change_email():
 
             # 生成验证码
             code = generate_verification_code()
-            expires_at = datetime.utcnow() + timedelta(minutes=10)
+            expires_at = get_utc_now() + timedelta(minutes=10)
 
             # 保存验证码到数据库
             verification_record = EmailVerificationCode(
@@ -2021,7 +2023,7 @@ def admin_stats():
         total_authorizations = AuthorizationCode.query.count()
 
         # 本月新增授权
-        now = datetime.utcnow()
+        now = get_utc_now()
         first_day_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         monthly_authorizations = AuthorizationCode.query.filter(
             AuthorizationCode.expires_at >= first_day_of_month
@@ -2244,7 +2246,7 @@ def admin_authorizations():
             # 确定状态
             if auth.used:
                 status = '已使用'
-            elif auth.expires_at and auth.expires_at < datetime.utcnow():
+            elif auth.expires_at and auth.expires_at < get_utc_now():
                 status = '已过期'
             else:
                 status = '有效'
@@ -2485,7 +2487,7 @@ def admin_update_config(key):
         if 'is_public' in data:
             config.is_public = data['is_public']
 
-        config.updated_at = datetime.utcnow()
+        config.updated_at = get_utc_now()
         db.session.commit()
 
         return jsonify({
