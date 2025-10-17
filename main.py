@@ -123,7 +123,7 @@ def create_default_configs():
             'key': 'max_clients_per_user',
             'value': '-1',
             'value_type': 'number',
-            'description': '每个用户最多创建的应用数量; <0 = 无限制',
+            'description': '每个用户最多创建的应用数量(除管理员); <0 = 无限制',
             'category': 'limits',
             'is_public': False
         },
@@ -798,10 +798,11 @@ def create_oauth_client():
         client_name = request.form['client_name']
         redirect_uris_text = request.form['redirect_uris']
 
-        if MAX_CLIENTS_PER_USER >= 0:
-            if len(current_user.oauth_clients) == MAX_CLIENTS_PER_USER:
-                flash(f'OAuth应用创建失败，每个用户最多只能创建{MAX_CLIENTS_PER_USER}个应用！', 'error')
-                return redirect(url_for('oauth_clients'))
+        if current_user.username != ADMIN_USERNAME:  # 管理员可以无视
+            if MAX_CLIENTS_PER_USER >= 0:
+                if len(current_user.oauth_clients) == MAX_CLIENTS_PER_USER:
+                    flash(f'OAuth应用创建失败，每个用户最多只能创建{MAX_CLIENTS_PER_USER}个应用！', 'error')
+                    return redirect(url_for('oauth_clients'))
 
         # 将重定向URI转换为JSON格式存储
         redirect_uris_list = [uri.strip() for uri in redirect_uris_text.split('\n') if uri.strip()]
