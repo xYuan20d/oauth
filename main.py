@@ -538,7 +538,7 @@ def send_verification_email(email, verification_code):
             raise Exception("SMTP配置不完整，请设置SMTP_USERNAME和SMTP_PASSWORD环境变量")
 
         # 邮件内容
-        subject = 'OAuth认证平台 - 邮箱验证码'
+        subject = f'{SITE_NAME} - 邮箱验证码'
         content = requests.get(request.url_root + url_for("serve_file", filename='html/mail.html')).text\
             .replace("_e_m_a_i_l_", email).replace("_c_o_d_e_", verification_code)\
             .replace("_y_e_a_r_", str(datetime.now().year)).replace("_SITE_NAME_", SITE_NAME)
