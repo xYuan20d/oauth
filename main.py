@@ -38,7 +38,12 @@ app.json.ensure_ascii = False
 
 # ADMIN配置
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
-ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'admin123')
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
+
+# 随机密码在每次启动时生成
+if not ADMIN_USERNAME:
+    ADMIN_PASSWORD = secrets.token_hex(10)
+    print(f"未设置ADMIN_PASSWORD, 为保证安全性, 使用随机密码:\n{ADMIN_PASSWORD}\n密码将在每次启动时更改, 请及时设置!")
 
 # 管理员认证装饰器
 def admin_required(f):
