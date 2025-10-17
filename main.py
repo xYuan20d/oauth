@@ -1986,6 +1986,12 @@ def change_email():
         db.session.rollback()
         return jsonify({'success': False, 'error': f'修改邮箱失败: {str(e)}'})
 
+@app.route("/admin")
+@admin_required
+def to_admin_dashboard():
+    """重定向到仪表板"""
+    return redirect(url_for('admin_dashboard'))
+
 # 管理员路由
 @app.route('/admin/index')
 @admin_required
