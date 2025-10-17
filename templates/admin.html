@@ -960,6 +960,7 @@
         // 全局变量
         let currentEditingConfig = null;
         let configCategories = [];
+        let configData = [];
 
         // 标签页切换
         document.querySelectorAll('.admin-nav a').forEach(tab => {
@@ -1186,8 +1187,9 @@
                     return response.json();
                 })
                 .then(data => {
+                    configData = data.configs || []; // 保存配置数据
                     configCategories = data.categories || [];
-                    renderConfigs(data.configs);
+                    renderConfigs(configData);
                 })
                 .catch(error => {
                     contentDiv.innerHTML = `<div class="text-center p-3"><i class="fas fa-exclamation-triangle"></i><p>加载失败: ${error.message}</p></div>`;
@@ -1291,28 +1293,8 @@
 
         // 打开编辑配置模态框
         function openEditConfigModal(configKey) {
-            // 由于我们无法直接获取配置对象，这里需要重新获取该配置的详细信息
-            // 或者我们可以从当前显示的配置中查找
-            const configCards = document.querySelectorAll('.config-card');
-            let targetConfig = null;
-
-            // 查找匹配的配置
-            configCards.forEach(card => {
-                const keyElement = card.querySelector('.config-key');
-                if (keyElement && keyElement.textContent === configKey) {
-                    // 从卡片数据中提取信息（简化实现）
-                    // 实际项目中应该重新从服务器获取或存储配置数据
-                    targetConfig = {
-                        key: configKey,
-                        value_type: card.querySelector('.config-type').textContent,
-                        description: card.querySelector('.config-description').textContent,
-                        category: '', // 需要从其他地方获取
-                        is_public: card.querySelector('.config-public') !== null,
-                        value: null, // 需要从其他地方获取
-                        raw_value: '' // 需要从其他地方获取
-                    };
-                }
-            });
+            // 从保存的配置数据中查找完整的配置对象
+            const targetConfig = configData.find(config => config.key === configKey);
 
             if (!targetConfig) {
                 alert('未找到配置信息');
@@ -1321,6 +1303,7 @@
 
             currentEditingConfig = targetConfig;
 
+            // 填充表单
             document.getElementById('edit-config-key').value = targetConfig.key;
             document.getElementById('edit-config-description').value = targetConfig.description || '';
             document.getElementById('edit-config-category').value = targetConfig.category;
@@ -1333,30 +1316,37 @@
             let inputHtml = '';
             let hintText = '';
 
-            switch(targetConfig.value_type) {
+            // 使用配置的原始值类型
+            const valueType = targetConfig.value_type;
+            const rawValue = targetConfig.raw_value; // 后端返回的原始字符串值
+            const parsedValue = targetConfig.value;   // 后端解析后的值
+
+            switch(valueType) {
                 case 'boolean':
+                    // 使用解析后的布尔值
+                    const boolValue = parsedValue === true || parsedValue === 'true';
                     inputHtml = `
                         <label>
-                            <input type="checkbox" id="edit-config-value" class="config-checkbox" ${targetConfig.value ? 'checked' : ''}>
+                            <input type="checkbox" id="edit-config-value" class="config-checkbox" ${boolValue ? 'checked' : ''}>
                             启用
                         </label>
                     `;
                     hintText = '布尔值配置，选中表示true，未选中表示false';
                     break;
                 case 'number':
-                    inputHtml = `<input type="number" id="edit-config-value" class="form-input" value="${targetConfig.value}" step="any">`;
+                    inputHtml = `<input type="number" id="edit-config-value" class="form-input" value="${parsedValue}" step="any">`;
                     hintText = '数值配置，请输入数字';
                     break;
                 case 'json':
-                    inputHtml = `<textarea id="edit-config-value" class="form-textarea config-json">${JSON.stringify(targetConfig.value, null, 2)}</textarea>`;
+                    inputHtml = `<textarea id="edit-config-value" class="form-textarea config-json">${JSON.stringify(parsedValue, null, 2)}</textarea>`;
                     hintText = 'JSON配置，请输入有效的JSON格式';
                     break;
                 default:
-                    if (targetConfig.raw_value && targetConfig.raw_value.length > 100) {
-                        inputHtml = `<textarea id="edit-config-value" class="form-textarea">${targetConfig.raw_value}</textarea>`;
+                    if (rawValue && rawValue.length > 100) {
+                        inputHtml = `<textarea id="edit-config-value" class="form-textarea">${rawValue}</textarea>`;
                         hintText = '长文本配置';
                     } else {
-                        inputHtml = `<input type="text" id="edit-config-value" class="form-input" value="${targetConfig.raw_value}">`;
+                        inputHtml = `<input type="text" id="edit-config-value" class="form-input" value="${rawValue}">`;
                         hintText = '文本配置';
                     }
             }
@@ -1555,26 +1545,35 @@
             const category = formData.get('category');
             const is_public = formData.get('is_public') === 'on';
 
-            // 获取值（根据类型处理）
+            // 获取值（根据原始类型处理）
             let value;
             const valueElement = document.getElementById('edit-config-value');
+            const originalType = currentEditingConfig.value_type;
 
-            if (currentEditingConfig.value_type === 'boolean') {
-                value = valueElement.checked;
-            } else if (currentEditingConfig.value_type === 'number') {
-                value = parseFloat(valueElement.value);
-            } else if (currentEditingConfig.value_type === 'json') {
-                try {
-                    value = JSON.parse(valueElement.value);
-                } catch (e) {
-                    alert('JSON格式无效，请检查输入');
-                    return;
-                }
-            } else {
-                value = valueElement.value;
+            switch(originalType) {
+                case 'boolean':
+                    value = valueElement.checked;
+                    break;
+                case 'number':
+                    value = parseFloat(valueElement.value);
+                    if (isNaN(value)) {
+                        alert('请输入有效的数字');
+                        return;
+                    }
+                    break;
+                case 'json':
+                    try {
+                        value = JSON.parse(valueElement.value);
+                    } catch (e) {
+                        alert('JSON格式无效，请检查输入');
+                        return;
+                    }
+                    break;
+                default:
+                    value = valueElement.value;
             }
 
-            // 发送更新请求
+            // 发送更新请求，包含类型信息
             fetch(`/api/admin/configs/${key}`, {
                 method: 'PUT',
                 headers: {
@@ -1582,6 +1581,7 @@
                 },
                 body: JSON.stringify({
                     value: value,
+                    value_type: originalType, // 确保传递类型信息
                     description: description,
                     category: category,
                     is_public: is_public
