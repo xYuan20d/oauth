@@ -168,7 +168,7 @@ def create_default_configs():
         print(f"初始化默认配置时出错: {str(e)}")
 
 def get_utc_now():
-    return datetime.now(timezone.utc)
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 # 数据库配置
 USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() in ('true', '1', 't')
