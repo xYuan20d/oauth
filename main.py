@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+from importlib import util
 import requests
 import smtplib
 from email.mime.text import MIMEText
@@ -36,6 +38,10 @@ if os.getenv('USE_CORS', 'False').lower() in ('true', '1', 't'):
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", secrets.token_hex(16))
 app.json.ensure_ascii = False
 
+# PLUGINS配置
+USE_PLUGINS = os.getenv('USE_PLUGINS', 'False').lower() in ('true', '1', 't')
+PLUGINS_DIR = os.getenv("PLUGIN_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "plugins"))
+
 # ADMIN配置
 ADMIN_USERNAME = os.getenv('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')
@@ -45,14 +51,17 @@ if not ADMIN_USERNAME:
     ADMIN_PASSWORD = secrets.token_hex(10)
     print(f"未设置ADMIN_PASSWORD, 为保证安全性, 使用随机密码:\n{ADMIN_PASSWORD}\n密码将在每次启动时更改, 请及时设置!")
 
-# 管理员认证装饰器
+# 管理员认证和装饰器
+def is_admin():
+    return current_user.username == ADMIN_USERNAME
+
 def admin_required(f):
     """验证当前用户是否为管理员"""
     @wraps(f)
     @login_required
     def decorated_function(*args, **kwargs):
         # 检查当前用户是否为管理员
-        if current_user.username != ADMIN_USERNAME:
+        if not is_admin():
             abort(404)  # 普通用户返回404
         return f(*args, **kwargs)
     return decorated_function
@@ -66,7 +75,7 @@ def create_admin_user():
         if admin_user:
             # 更新现有管理员密码
             admin_user.password_hash = generate_password_hash(ADMIN_PASSWORD)
-            print(f"管理员账户已存在，密码已更新: {ADMIN_USERNAME}")
+            print(f"管理员账户已存在, 密码已更新: {ADMIN_USERNAME}")
         else:
             # 创建新的管理员账户
             admin_user = User(
@@ -133,6 +142,14 @@ def create_default_configs():
             'value_type': 'number',
             'description': '访问令牌过期天数',
             'category': 'security',
+            'is_public': False
+        },
+        {
+            'key': 'not_load_plugins',
+            'value': ';',
+            'value_type': 'string',
+            'description': '禁止加载的插件(填写模块名, 不带文件后缀); 分号隔开',
+            'category': 'plugins',
             'is_public': False
         }
     ]
@@ -450,6 +467,53 @@ class AccessToken(db.Model):
     expires_at = db.Column(DatabaseCompat.datetime_type(), nullable=False)
     user_id = db.Column(DatabaseCompat.integer_type(), db.ForeignKey('user.id'), nullable=False)
 
+class Plugins:
+    def __init__(self, plugins_dir):
+        self.dir = plugins_dir
+        self.loaded_plugins = []  # 用于保存已加载的插件
+
+    def load_plugins(self):
+        for filename in os.listdir(self.dir):
+            filepath = os.path.join(self.dir, filename)
+            if os.path.isfile(filepath) and filename.endswith('.py'):
+                plugin_name = filename[:-3]  # 去除 .py 后缀，作为模块名
+                self.load_plugin(filepath, plugin_name)
+
+    def load_plugin(self, filepath, plugin_name):
+        if plugin_name not in config_manager.get("not_load_plugins").split(";"):
+            # 加载模块
+            spec = util.spec_from_file_location(plugin_name, filepath)
+            plugin = util.module_from_spec(spec)
+
+            sys.modules[plugin_name] = plugin  # 将模块添加到 sys.modules
+            spec.loader.exec_module(plugin)
+
+            # 将插件添加到加载的插件列表
+            self.loaded_plugins.append(plugin)
+
+            print(f"插件 {plugin_name} 已加载")
+
+    def call_plugin_method(self, method_name, *args, **kwargs):
+        # 用于存储所有插件调用的返回值
+        return_values = []
+
+        # 遍历所有加载的插件，查找并调用每个插件的指定方法
+        for plugin in self.loaded_plugins:
+            # 检查插件中是否有该方法
+            method = getattr(plugin, method_name, None)
+            if callable(method) or isinstance(method, type):
+                print(f"调用插件 {plugin.__name__} 中的 {method_name} 方法:")
+                result = method(*args, **kwargs)
+                return_values.append(result)
+            elif method is None:
+                print(f"插件 {plugin.__name__} 中没有找到方法 {method_name}")
+                # 如果插件中没有该方法, 不添加
+            else:
+                # 属性
+                return_values.append(method)
+
+        return return_values
+
 
 # 创建数据库表（在app_context内）和管理员账户
 with app.app_context():
@@ -466,8 +530,12 @@ with app.app_context():
 
     ALLOW_REGISTRATION = config_manager.get("allow_registration", default=True)
     app.jinja_env.globals.update(SITE_NAME=SITE_NAME, SITE_DESCRIPTION=SITE_DESCRIPTION, SITE_KEYWORDS=SITE_KEYWORDS,
-                                 ALLOW_REGISTRATION=ALLOW_REGISTRATION)
+                                 ALLOW_REGISTRATION=ALLOW_REGISTRATION, _MAIN_GLOBALS=globals())
 
+    plugin_manager = Plugins(PLUGINS_DIR)
+    plugin_manager.load_plugins()
+
+    app.jinja_env.globals.update(PLUGINS_MANAGER=plugin_manager)
 
 def token_required(f):
     """OAuth令牌认证装饰器"""
@@ -2544,6 +2612,9 @@ def get_public_configs():
             'message': str(e)
         }), 500
 
+# 加载插件
+for _plugin in plugin_manager.call_plugin_method("InitRoute", globals()):
+    _plugin.init_route()
 
 if __name__ == '__main__':
     app.run(debug=False, port=12345, host='::')

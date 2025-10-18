@@ -2,6 +2,10 @@
 let currentEditingConfig = null;
 let configCategories = [];
 let configData = [];
+let currentModalCallbacks = {
+    onClose: null,
+    onSubmit: null
+};
 
 // 标签页切换
 document.querySelectorAll('.admin-nav a').forEach(tab => {
@@ -300,7 +304,7 @@ function renderConfigCard(config) {
     }
 
     return `
-        <div class="config-card">
+        <div class="card">
             <div class="config-header">
                 <div>
                     <div class="config-key">${config.key}</div>
@@ -709,4 +713,270 @@ window.onclick = function(event) {
 // 页面加载时初始化仪表板
 document.addEventListener('DOMContentLoaded', () => {
     loadDashboardData();
+});
+
+// 打开空模态框
+function openEmptyModal(options = {}) {
+    const {
+        title = '模态框',
+        content = '',
+        footer = '',
+        size = 'medium', // small, medium, large, xlarge, fullscreen
+        onClose = null,
+        onSubmit = null
+    } = options;
+
+    // 设置标题
+    document.getElementById('emptyModalTitle').textContent = title;
+
+    // 设置内容
+    document.getElementById('emptyModalBody').innerHTML = content;
+
+    // 设置底部按钮
+    document.getElementById('emptyModalFooter').innerHTML = footer;
+
+    // 设置尺寸
+    const modalContent = document.querySelector('#emptyModal .modal-content');
+    modalContent.className = 'modal-content';
+    if (size) {
+        modalContent.classList.add(size);
+    }
+
+    // 保存回调函数
+    currentModalCallbacks = { onClose, onSubmit };
+
+    // 显示模态框
+    document.getElementById('emptyModal').style.display = 'block';
+}
+
+// 关闭空模态框
+function closeEmptyModal() {
+    document.getElementById('emptyModal').style.display = 'none';
+
+    // 执行关闭回调
+    if (currentModalCallbacks.onClose) {
+        currentModalCallbacks.onClose();
+    }
+
+    // 重置回调
+    currentModalCallbacks = { onClose: null, onSubmit: null };
+}
+
+// 提交空模态框
+function submitEmptyModal() {
+    if (currentModalCallbacks.onSubmit) {
+        currentModalCallbacks.onSubmit();
+    }
+}
+
+// 创建确认对话框
+function showConfirmModal(options = {}) {
+    const {
+        title = '确认操作',
+        message = '您确定要执行此操作吗？',
+        confirmText = '确定',
+        cancelText = '取消',
+        onConfirm = null,
+        onCancel = null,
+        type = 'warning' // warning, danger, info, success
+    } = options;
+
+    const iconMap = {
+        warning: 'fa-exclamation-triangle',
+        danger: 'fa-exclamation-circle',
+        info: 'fa-info-circle',
+        success: 'fa-check-circle'
+    };
+
+    const colorMap = {
+        warning: 'var(--warning)',
+        danger: 'var(--danger)',
+        info: 'var(--primary)',
+        success: 'var(--success)'
+    };
+
+    const content = `
+        <div style="display: flex; align-items: flex-start; gap: 15px; padding: 10px 0;">
+            <i class="fas ${iconMap[type]}" style="font-size: 2rem; color: ${colorMap[type]}; margin-top: 5px;"></i>
+            <div style="flex: 1;">
+                <p style="margin: 0; font-size: 1rem; line-height: 1.5;">${message}</p>
+            </div>
+        </div>
+    `;
+
+    const footer = `
+        <button type="button" class="btn btn-secondary" onclick="closeEmptyModal()">${cancelText}</button>
+        <button type="button" class="btn ${type === 'danger' ? 'btn-danger' : type === 'success' ? 'btn-primary' : 'btn-warning'}"
+                onclick="handleConfirmAction()">${confirmText}</button>
+    `;
+
+    openEmptyModal({
+        title,
+        content,
+        footer,
+        size: 'small',
+        onClose: onCancel,
+        onSubmit: onConfirm
+    });
+
+    // 处理确认操作
+    window.handleConfirmAction = function() {
+        if (onConfirm) {
+            onConfirm();
+        }
+        closeEmptyModal();
+    };
+}
+
+// 创建加载中模态框
+function showLoadingModal(message = '加载中...') {
+    const content = `
+        <div style="text-align: center; padding: 40px 20px;">
+            <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary); margin-bottom: 20px;"></i>
+            <p style="margin: 0; font-size: 1.1rem; color: var(--gray);">${message}</p>
+        </div>
+    `;
+
+    openEmptyModal({
+        title: '请稍候',
+        content,
+        footer: '',
+        size: 'small'
+    });
+}
+
+// 创建表单模态框
+function showFormModal(options = {}) {
+    const {
+        title = '表单',
+        formId = 'dynamicForm',
+        fields = [],
+        submitText = '提交',
+        cancelText = '取消',
+        onSubmit = null,
+        onCancel = null
+    } = options;
+
+    let formHTML = '';
+    fields.forEach(field => {
+        const { type, name, label, value = '', placeholder = '', required = false, options = [] } = field;
+
+        let fieldHTML = '';
+        switch (type) {
+            case 'textarea':
+                fieldHTML = `
+                    <textarea name="${name}" class="form-textarea" placeholder="${placeholder}" ${required ? 'required' : ''}>${value}</textarea>
+                `;
+                break;
+            case 'select':
+                fieldHTML = `
+                    <select name="${name}" class="form-select" ${required ? 'required' : ''}>
+                        ${options.map(opt => `<option value="${opt.value}" ${opt.value === value ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                    </select>
+                `;
+                break;
+            case 'checkbox':
+                fieldHTML = `
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" name="${name}" class="config-checkbox" ${value ? 'checked' : ''}>
+                        ${label}
+                    </label>
+                `;
+                break;
+            default:
+                fieldHTML = `
+                    <input type="${type}" name="${name}" class="form-input" value="${value}" placeholder="${placeholder}" ${required ? 'required' : ''}>
+                `;
+        }
+
+        if (type !== 'checkbox') {
+            formHTML += `
+                <div class="form-group">
+                    <label class="form-label">${label}</label>
+                    ${fieldHTML}
+                </div>
+            `;
+        } else {
+            formHTML += `
+                <div class="form-group">
+                    ${fieldHTML}
+                </div>
+            `;
+        }
+    });
+
+    const content = `
+        <form id="${formId}">
+            ${formHTML}
+        </form>
+    `;
+
+    const footer = `
+        <button type="button" class="btn btn-secondary" onclick="closeEmptyModal()">${cancelText}</button>
+        <button type="submit" form="${formId}" class="btn btn-primary">${submitText}</button>
+    `;
+
+    openEmptyModal({
+        title,
+        content,
+        footer,
+        size: 'medium',
+        onClose: onCancel,
+        onSubmit: () => {
+            const form = document.getElementById(formId);
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+
+            // 处理复选框
+            fields.forEach(field => {
+                if (field.type === 'checkbox') {
+                    const checkbox = form.querySelector(`[name="${field.name}"]`);
+                    data[field.name] = checkbox.checked;
+                }
+            });
+
+            if (onSubmit) {
+                onSubmit(data);
+            }
+        }
+    });
+
+    // 添加表单提交事件
+    const form = document.getElementById(formId);
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitEmptyModal();
+        });
+    }
+}
+
+// 更新模态框点击外部关闭功能
+window.onclick = function(event) {
+    const modals = ['editConfigModal', 'addConfigModal', 'emptyModal'];
+
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (event.target === modal) {
+            if (modalId === 'emptyModal') {
+                closeEmptyModal();
+            } else if (modalId === 'editConfigModal') {
+                closeEditConfigModal();
+            } else if (modalId === 'addConfigModal') {
+                closeAddConfigModal();
+            }
+        }
+    });
+}
+
+// ESC键关闭所有模态框
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeEmptyModal();
+        closeEditConfigModal();
+        closeAddConfigModal();
+    }
 });

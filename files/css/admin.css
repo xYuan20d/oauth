@@ -358,7 +358,7 @@ body {
     gap: 10px;
 }
 
-.config-card {
+.card {
     background: white;
     border: 1px solid var(--gray-light);
     border-radius: var(--border-radius);
@@ -368,7 +368,7 @@ body {
     transition: var(--transition);
 }
 
-.config-card:hover {
+.card:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
@@ -672,4 +672,64 @@ body {
 .status-expired {
     background: rgba(239, 71, 111, 0.15);
     color: #c5304d;
+}
+
+.modal-body {
+    padding: 0 30px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+    padding: 20px 30px;
+    border-top: 1px solid var(--gray-light);
+}
+
+.modal-content.small {
+    max-width: 400px;
+}
+
+.modal-content.medium {
+    max-width: 600px;
+}
+
+.modal-content.large {
+    max-width: 800px;
+}
+
+.modal-content.xlarge {
+    max-width: 1000px;
+}
+
+.modal-content.fullscreen {
+    width: 95%;
+    height: 90%;
+    margin: 2.5% auto;
+}
+
+.modal-content.fullscreen .modal-body {
+    max-height: calc(90vh - 140px);
+}
+
+code {
+    background: linear-gradient(135deg, var(--gray-light) 0%, #e2e6ea 100%);
+    color: var(--dark);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-family: 'Courier New', Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    border: 1px solid #d1d9e0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: var(--transition);
+    font-weight: 500;
+}
+
+code:hover {
+    background: linear-gradient(135deg, #e2e6ea 0%, #dbe0e5 100%);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
 }

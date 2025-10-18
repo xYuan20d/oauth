@@ -1,12 +1,13 @@
 /*
 
 .DS_Store
-users.db
+*.db
 __pycache__/
 
 !instance/
 !files/
 !templates/
+!plugins/
 
 !main.py
 !client.py

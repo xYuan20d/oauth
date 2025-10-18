@@ -28,6 +28,12 @@
             <a href="#" data-tab="clients"><i class="fas fa-th-large"></i> 应用管理</a>
             <a href="#" data-tab="authorizations"><i class="fas fa-key"></i> 授权管理</a>
             <a href="#" data-tab="configs"><i class="fas fa-cog"></i> 网站配置</a>
+            {% for plugin in PLUGINS_MANAGER.call_plugin_method("AdminUI", _MAIN_GLOBALS) %}
+                {% for button_name, button_info in plugin.ui_navbar().items() %}
+                    <a href="#" data-tab="{{ button_info['data_tab'] }}">
+                        <i class="{{ button_info['icon'] }}"></i> {{ button_name }}</a>
+                {% endfor %}
+            {% endfor %}
         </div>
 
         <!-- 仪表板 -->
@@ -191,6 +197,17 @@
                 </div>
             </div>
         </div>
+        <!-- 插件 -->
+        {% for plugin in PLUGINS_MANAGER.call_plugin_method("AdminUI", _MAIN_GLOBALS) %}
+            {% for tab_id, tab_html in plugin.ui_tab_html().items() %}
+                <div id="{{ tab_id }}" class="tab-content">
+                    <div class="admin-section">
+                        {{ tab_html | safe }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
     </div>
 
     <!-- 配置编辑模态框 -->
@@ -277,6 +294,21 @@
                     <button type="submit" class="btn-primary">创建配置</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="emptyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="emptyModalTitle"></h3>
+                <span class="close" onclick="closeEmptyModal()">&times;</span>
+            </div>
+            <div id="emptyModalBody" class="modal-body">
+                <!-- 动态内容将在这里插入 -->
+            </div>
+            <div id="emptyModalFooter" class="modal-footer">
+                <!-- 动态按钮将在这里插入 -->
+            </div>
         </div>
     </div>
 
