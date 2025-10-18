@@ -194,7 +194,7 @@ else:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # 设置唯一的session cookie名称
-app.config['SESSION_COOKIE_NAME'] = 'main_session'
+app.config['SESSION_COOKIE_NAME'] = os.getenv('SESSION_COOKIE_NAME', 'main_session')
 app.config['SESSION_COOKIE_PATH'] = '/'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'True').lower() in ('false', '0', 'f')
