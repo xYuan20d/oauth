@@ -185,9 +185,17 @@
                 <h3><i class="fas fa-cog"></i> 网站配置管理</h3>
                 <p>管理网站的各种配置项，部分配置您可能需要在更改成功后重新部署该网站</p>
 
-                <button class="add-config-btn" onclick="openAddConfigModal()">
-                    <i class="fas fa-plus"></i> 添加新配置
-                </button>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="add-config-btn" onclick="openAddConfigModal()">
+                        <i class="fas fa-plus"></i> 添加新配置
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleAllConfigCategories(true)">
+                        <i class="fas fa-chevron-down"></i> 展开所有
+                    </button>
+                    <button class="btn btn-secondary" onclick="toggleAllConfigCategories(false)">
+                        <i class="fas fa-chevron-right"></i> 折叠所有
+                    </button>
+                </div>
 
                 <div id="configs-content">
                     <div class="text-center p-3">
@@ -197,6 +205,7 @@
                 </div>
             </div>
         </div>
+
         <!-- 插件 -->
         {% for plugin in PLUGINS_MANAGER.call_plugin_method("AdminUI", _MAIN_GLOBALS) %}
             {% for tab_id, tab_html in plugin.ui_tab_html().items() %}

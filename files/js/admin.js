@@ -2,6 +2,7 @@
 let currentEditingConfig = null;
 let configCategories = [];
 let configData = [];
+let configCategoryState = {};
 let currentModalCallbacks = {
     onClose: null,
     onSubmit: null
@@ -263,15 +264,31 @@ function renderConfigs(configs) {
 
     // 遍历所有分类
     Object.keys(configsByCategory).sort().forEach(category => {
+        // 初始化分类状态（默认展开）
+        if (configCategoryState[category] === undefined) {
+            configCategoryState[category] = true;
+        }
+
+        const isExpanded = configCategoryState[category];
+        const iconClass = isExpanded ? 'fa-chevron-down' : 'fa-chevron-right';
+        const displayStyle = isExpanded ? 'block' : 'none';
+
         html += `<div class="config-category">`;
+        // 添加 data-category 属性以便更容易选择
+        html += `<div class="config-category-header" data-category="${category}" onclick="toggleConfigCategory('${category}')">`;
+        html += `<i class="fas ${iconClass} category-chevron"></i>`;
         html += `<h4><i class="fas fa-folder"></i> ${category}</h4>`;
+        html += `<span class="config-count">${configsByCategory[category].length} 个配置项</span>`;
+        html += `</div>`;
+
+        html += `<div class="config-category-items" id="category-${category}" style="display: ${displayStyle};">`;
 
         // 该分类下的所有配置项
         configsByCategory[category].forEach(config => {
             html += renderConfigCard(config);
         });
 
-        html += `</div>`;
+        html += `</div></div>`;
     });
 
     contentDiv.innerHTML = html;
@@ -952,6 +969,42 @@ function showFormModal(options = {}) {
             submitEmptyModal();
         });
     }
+}
+
+function toggleConfigCategory(category) {
+    const itemsContainer = document.getElementById(`category-${category}`);
+    const header = document.querySelector(`.config-category-header[data-category="${category}"]`);
+
+    if (!header || !itemsContainer) return;
+
+    const chevron = header.querySelector('.category-chevron');
+
+    if (configCategoryState[category]) {
+        // 当前是展开状态，要折叠
+        itemsContainer.style.display = 'none';
+        chevron.className = 'fas fa-chevron-right category-chevron';
+        configCategoryState[category] = false;
+    } else {
+        // 当前是折叠状态，要展开
+        itemsContainer.style.display = 'block';
+        chevron.className = 'fas fa-chevron-down category-chevron';
+        configCategoryState[category] = true;
+    }
+}
+
+// 折叠/展开所有分类
+function toggleAllConfigCategories(expand) {
+    Object.keys(configCategoryState).forEach(category => {
+        configCategoryState[category] = expand;
+        const itemsContainer = document.getElementById(`category-${category}`);
+        const header = document.querySelector(`.config-category-header[data-category="${category}"]`);
+
+        if (header && itemsContainer) {
+            const chevron = header.querySelector('.category-chevron');
+            itemsContainer.style.display = expand ? 'block' : 'none';
+            chevron.className = `fas fa-chevron-${expand ? 'down' : 'right'} category-chevron`;
+        }
+    });
 }
 
 // 更新模态框点击外部关闭功能

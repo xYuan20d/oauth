@@ -153,6 +153,24 @@ def create_default_configs():
             'is_public': False
         }
     ]
+    for app_config_name, app_config_value in app.config.items():
+        config_type = type(app_config_value)
+        config_type_table = {
+            dict: "json",
+            list: "list",
+            bool: "boolean",
+            str: "string",
+            int: "number",
+            type(None): "null",
+            timedelta: "datetime",
+        }
+        default_configs.append({
+            'key': app_config_name,
+            'value': str(app_config_value),
+            'value_type': config_type_table[config_type],
+            "category": "app",
+            "is_public": False,
+        })
 
     for config_data in default_configs:
         existing = SiteConfig.query.filter_by(key=config_data['key']).first()
@@ -336,6 +354,30 @@ class ConfigManager:
         return config
 
     @staticmethod
+    def update(key, value=None, description=None, category=None, is_public=None):
+        """更新已存在的配置项的某些属性"""
+        config = SiteConfig.query.filter_by(key=key).first()
+
+        if not config:
+            return None  # 如果配置项不存在，返回None
+
+        # 根据提供的参数修改配置项
+        if value is not None:
+            config.set_value(value)  # 修改值
+        if description is not None:
+            config.description = description  # 修改描述
+        if category is not None:
+            config.category = category  # 修改分类
+        if is_public is not None:
+            config.is_public = is_public  # 修改是否公开
+
+        # 更新修改时间
+        config.updated_at = get_utc_now()
+
+        db.session.commit()
+        return config
+
+    @staticmethod
     def delete(key):
         """删除配置"""
         config = SiteConfig.query.filter_by(key=key).first()
@@ -365,7 +407,6 @@ class ConfigManager:
         for config in configs:
             result[config.key] = config.get_value()
         return result
-
 
     @staticmethod
     def delete_all():
@@ -480,7 +521,7 @@ class Plugins:
                 self.load_plugin(filepath, plugin_name)
 
     def load_plugin(self, filepath, plugin_name):
-        if plugin_name not in config_manager.get("not_load_plugins").split(";"):
+        if plugin_name not in [config for config in config_manager.get("not_load_plugins").split(";") if config != ""]:
             # 加载模块
             spec = util.spec_from_file_location(plugin_name, filepath)
             plugin = util.module_from_spec(spec)
@@ -513,6 +554,24 @@ class Plugins:
                 return_values.append(method)
 
         return return_values
+
+    def unload_plugins(self):
+        for plugin in self.loaded_plugins:
+            plugin_name = plugin.__name__
+            if plugin_name in sys.modules:
+                # 删除插件模块
+                del sys.modules[plugin_name]
+                print(f"插件 {plugin_name} 已卸载")
+            else:
+                print(f"插件 {plugin_name} 不在 sys.modules 中，无法卸载")
+
+        # 清空已加载的插件列表
+        self.loaded_plugins.clear()
+        print("所有插件已卸载")
+
+    def reload_plugins(self):
+        self.unload_plugins()
+        self.load_plugins()
 
 
 # 创建数据库表（在app_context内）和管理员账户

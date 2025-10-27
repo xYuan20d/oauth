@@ -733,3 +733,62 @@ code:hover {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
     transform: translateY(-1px);
 }
+
+/* 配置分类头部样式 */
+.config-category-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.config-category-header:hover {
+    background: linear-gradient(90deg, var(--primary-dark), var(--secondary));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+}
+
+.config-category-header h4 {
+    margin: 0;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-chevron {
+    font-size: 0.8em;
+    transition: var(--transition);
+    width: 16px;
+    text-align: center;
+}
+
+.config-count {
+    font-size: 0.85em;
+    opacity: 0.8;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+/* 配置项容器 */
+.config-category-items {
+    transition: var(--transition);
+}
+
+/* 确保卡片在分类内部有适当的间距 */
+.config-category {
+    margin-bottom: 20px;
+}
+
+.config-category:last-child {
+    margin-bottom: 0;
+}
