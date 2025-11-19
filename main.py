@@ -272,6 +272,14 @@ class DatabaseCompat:
         """统一的布尔类型"""
         return Boolean
 
+    @staticmethod
+    def load_text_type():
+        if USE_MYSQL:
+            from sqlalchemy.dialects.mysql import LONGTEXT
+            return LONGTEXT
+        else:
+            return Text
+
 
 # 网站配置模型
 class SiteConfig(db.Model):
@@ -466,7 +474,7 @@ class ClientUserData(db.Model):
     client_id = db.Column(DatabaseCompat.string_type(40), nullable=False)  # 第三方客户端ID
     user_id = db.Column(DatabaseCompat.integer_type(), db.ForeignKey('user.id'), nullable=False)  # 用户ID
     data_key = db.Column(DatabaseCompat.string_type(200), nullable=False)  # 数据键名
-    data_value = db.Column(DatabaseCompat.text_type())  # 数据值（JSON格式）
+    data_value = db.Column(DatabaseCompat.load_text_type())  # 数据值（JSON格式）
     data_type = db.Column(DatabaseCompat.string_type(50))  # 数据类型
     created_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now)
     updated_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now, onupdate=get_utc_now)
