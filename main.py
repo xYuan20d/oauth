@@ -2093,7 +2093,6 @@ def oauth_user_avatar():
     })
 
 @app.route('/oauth/user/<int:user_id>/avatar')
-@token_required
 def get_specific_user_avatar(user_id):
     """获取指定用户的头像"""
     user = User.query.get_or_404(user_id)
