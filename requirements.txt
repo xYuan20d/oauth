@@ -10,3 +10,4 @@ cryptography
 Pillow
 sqlalchemy==2.0.44
 flask-cors
+flask-migrate

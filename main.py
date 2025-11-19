@@ -9,6 +9,7 @@ from email.header import Header
 import random
 import string
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory, abort, g
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -222,6 +223,7 @@ app.jinja_env.globals.update(year=datetime.now().year)
 
 # 初始化SQLAlchemy
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # 初始化LoginManager
 login_manager = LoginManager()
@@ -473,16 +475,19 @@ class ClientUserData(db.Model):
     __table_args__ = (db.UniqueConstraint('client_id', 'user_id', 'data_key', name='_client_user_key_uc'),)
 
 
-# OAuth客户端模型 - 使用足够长的VARCHAR类型
+# OAuth客户端模型
 class OAuthClient(db.Model):
     id = db.Column(DatabaseCompat.integer_type(), primary_key=True)
     client_id = db.Column(DatabaseCompat.string_type(40), unique=True, nullable=False)
-    # 使用足够长的VARCHAR类型存储客户端密钥
     client_secret = db.Column(DatabaseCompat.string_type(500), nullable=False)
     client_name = db.Column(DatabaseCompat.string_type(100), nullable=False)
-    redirect_uris = db.Column(DatabaseCompat.text_type(), nullable=False)  # JSON格式的URI列表
+    redirect_uris = db.Column(DatabaseCompat.text_type(), nullable=False)
     user_id = db.Column(DatabaseCompat.integer_type(), db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(DatabaseCompat.datetime_type(), default=get_utc_now)
+
+    # 新增字段：数据公开访问功能
+    public_data_enabled = db.Column(DatabaseCompat.boolean_type(), default=False)
+    data_access_token = db.Column(DatabaseCompat.string_type(100), unique=True, nullable=True)
 
 
 # 授权码模型 - 使用足够长的VARCHAR类型
@@ -1341,13 +1346,14 @@ def delete_client_data():
 @app.route('/api/client_data/<client_id>')
 @login_required
 def get_client_data_api(client_id):
+    """获取客户端存储的数据 - 支持所有者访问"""
     # 验证客户端是否属于当前用户
     client = OAuthClient.query.filter_by(client_id=client_id, user_id=current_user.id).first()
     if not client:
         return jsonify(error='客户端不存在或无权访问'), 404
 
     # 获取该客户端的所有数据
-    client_data = ClientUserData.query.filter_by(client_id=client_id, user_id=current_user.id).all()
+    client_data = ClientUserData.query.filter_by(client_id=client_id).all()
 
     result = []
     for item in client_data:
@@ -1362,6 +1368,7 @@ def get_client_data_api(client_id):
             'key': item.data_key,
             'value': value,
             'type': item.data_type,
+            'user_id': item.user_id,
             'updated_at': item.updated_at.isoformat()
         })
 
@@ -1432,6 +1439,122 @@ def delete_client_data_item(client_id):
     else:
         return jsonify(error='数据项不存在'), 404
 
+@app.route('/api/client/<client_id>/generate_data_token', methods=['POST'])
+@login_required
+def generate_data_access_token(client_id):
+    """为客户端生成数据访问令牌"""
+    try:
+        client = OAuthClient.query.filter_by(client_id=client_id, user_id=current_user.id).first()
+        if not client:
+            return jsonify({'success': False, 'error': '客户端不存在或无权访问'}), 404
+
+        # 生成新的数据访问令牌
+        new_token = secrets.token_urlsafe(32)
+        client.data_access_token = new_token
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'data_access_token': new_token,
+            'message': '数据访问令牌已生成'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'生成令牌失败: {str(e)}'}), 500
+
+@app.route('/api/client/<client_id>/toggle_public_data', methods=['POST'])
+@login_required
+def toggle_public_data(client_id):
+    """切换客户端数据公开状态"""
+    try:
+        client = OAuthClient.query.filter_by(client_id=client_id, user_id=current_user.id).first()
+        if not client:
+            return jsonify({'success': False, 'error': '客户端不存在或无权访问'}), 404
+
+        client.public_data_enabled = not client.public_data_enabled
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'public_data_enabled': client.public_data_enabled,
+            'message': f'数据公开访问已{"开启" if client.public_data_enabled else "关闭"}'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'切换状态失败: {str(e)}'}), 500
+
+@app.route('/api/public/client_data/<client_id>')
+def get_public_client_data(client_id):
+    """通过数据访问令牌获取客户端的公开数据"""
+    try:
+        # 从查询参数获取数据访问令牌
+        data_access_token = request.args.get('data_access_token')
+        if not data_access_token:
+            return jsonify(error='缺少数据访问令牌'), 401
+
+        # 验证客户端和数据访问令牌
+        client = OAuthClient.query.filter_by(
+            client_id=client_id,
+            data_access_token=data_access_token,
+            public_data_enabled=True
+        ).first()
+
+        if not client:
+            return jsonify(error='无效的数据访问令牌或数据公开功能未开启'), 401
+
+        # 获取该客户端的所有公开数据
+        client_data = ClientUserData.query.filter_by(client_id=client_id).all()
+
+        result = []
+        for item in client_data:
+            value = None
+            if item.data_value:
+                try:
+                    value = json.loads(item.data_value)
+                except json.JSONDecodeError:
+                    value = item.data_value
+
+            result.append({
+                'key': item.data_key,
+                'value': value,
+                'type': item.data_type,
+                'user_id': item.user_id,
+                'updated_at': item.updated_at.isoformat()
+            })
+
+        return jsonify({
+            'client_name': client.client_name,
+            'data': result
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error': '获取数据失败',
+            'message': str(e)
+        }), 500
+
+@app.route('/api/client/<client_id>/revoke_data_token', methods=['POST'])
+@login_required
+def revoke_data_access_token(client_id):
+    """撤销数据访问令牌"""
+    try:
+        client = OAuthClient.query.filter_by(client_id=client_id, user_id=current_user.id).first()
+        if not client:
+            return jsonify({'success': False, 'error': '客户端不存在或无权访问'}), 404
+
+        client.data_access_token = None
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'message': '数据访问令牌已撤销'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'撤销令牌失败: {str(e)}'}), 500
 
 # 编辑OAuth客户端
 @app.route('/oauth/clients/<int:client_id>/edit', methods=['POST'])

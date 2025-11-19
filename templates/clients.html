@@ -203,6 +203,127 @@
         margin-bottom: 0;
     }
 
+    /* Public Data Access Styles */
+    .public-data-section {
+        background-color: rgba(0, 0, 0, 0.4);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        border-left: 4px solid #34a853;
+    }
+
+    .public-data-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .public-data-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 30px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 22px;
+        width: 22px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #34a853;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(30px);
+    }
+
+    .token-section {
+        margin-top: 15px;
+        padding: 15px;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 6px;
+        display: none;
+    }
+
+    .token-section.active {
+        display: block;
+    }
+
+    .token-display {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .token-value {
+        flex: 1;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        word-break: break-all;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .usage-info {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .usage-info h4 {
+        margin-bottom: 8px;
+        color: #34a853;
+    }
+
+    .usage-code {
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 5px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     /* Modal Styles */
     .modal {
         display: none;
@@ -306,7 +427,7 @@
                         <i class="fas fa-edit"></i> 修改
                     </button>
                     <form action="{{ url_for('delete_oauth_client', client_id=client.id) }}" method="POST" style="display: inline;">
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('确定要删除这个应用吗？此操作不可撤销！')">
+                        <button type="submit" class="btn btn-danger" onclick="return confirmAction('确定要删除这个应用吗？此操作不可撤销！')">
                             <i class="fas fa-trash-alt"></i> 删除
                         </button>
                     </form>
@@ -338,6 +459,63 @@
                                 <code>{{ uri }}</code>
                             </div>
                         {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Public Data Access Section -->
+            <div class="public-data-section">
+                <div class="public-data-header">
+                    <div class="public-data-title">
+                        <i class="fas fa-globe"></i>
+                        <span>公开数据访问</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="public-data-toggle-{{ client.client_id }}"
+                               {% if client.public_data_enabled %}checked{% endif %}
+                               onchange="togglePublicData('{{ client.client_id }}')">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <p style="color: rgba(255, 255, 255, 0.7); margin-bottom: 15px; font-size: 0.9rem;">
+                    开启后，非登录用户也可以通过数据访问令牌访问此应用的数据
+                </p>
+
+                <div class="token-section {% if client.public_data_enabled and client.data_access_token %}active{% endif %}"
+                     id="token-section-{{ client.client_id }}">
+                    {% if client.data_access_token %}
+                    <div class="token-display">
+                        <div class="token-value" id="token-value-{{ client.client_id }}">
+                            {{ client.data_access_token }}
+                        </div>
+                        <button class="btn btn-secondary" onclick="copyToClipboard('{{ client.data_access_token }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="btn btn-warning" onclick="generateNewToken('{{ client.client_id }}')">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="revokeToken('{{ client.client_id }}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="text-center">
+                        <button class="btn btn-primary" onclick="generateNewToken('{{ client.client_id }}')">
+                            <i class="fas fa-key"></i> 生成数据访问令牌
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <div class="usage-info">
+                        <h4><i class="fas fa-info-circle"></i> 如何使用数据访问令牌</h4>
+                        <p>在您的后端使用以下API端点获取数据：</p>
+                        <div class="usage-code">
+                            GET {{ request.url_root }}api/public/client_data/{{ client.client_id }}?data_access_token=您的数据访问令牌
+                        </div>
+                        <p style="margin-top: 8px; font-size: 0.85rem;color: red">
+                            返回的数据格式与用户令牌访问不相同，不需要用户登录验证。
+                        </p>
                     </div>
                 </div>
             </div>
